@@ -48,7 +48,7 @@ services:
       - "traefik.http.services.rss.loadbalancer.server.port=80" 
       - "traefik.docker.network=proxy"
     #homepage
-      - homepage.group=${GROUP}
+      - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=freshrss
       - homepage.icon=freshrss.png
       - homepage.href=https://rss.${DOMAIN}
