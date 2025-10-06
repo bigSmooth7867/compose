@@ -1,0 +1,38 @@
+services:
+  stirling-pdf:
+    image: frooodle/s-pdf:latest
+    container_name: stirling-pdf
+    restart: unless-stopped
+    # ports:
+    #   - '8080:8080'
+    volumes:
+      - ${DOCKER_DIR}/stirling-pdf/trainingData:/usr/share/tessdata #Required for extra OCR languages
+      - ${DOCKER_DIR}/stirling-pdf/extraConfigs:/configs
+#      - ${DOCKER_DIR}/stirling-pdf/customFiles:/customFiles/
+#      - ${DOCKER_DIR}/stirling-pdf/logs:/logs/
+    environment:
+      - DOCKER_ENABLE_SECURITY=false
+      - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
+      - LANGS=en_US
+    networks:
+      proxy:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pdf.entrypoints=http"
+      - "traefik.http.routers.pdf.rule=Host(`pdf.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.pdf-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.pdf.middlewares=pdf-https-redirect"
+      - "traefik.http.routers.pdf-secure.entrypoints=https"
+      - "traefik.http.routers.pdf-secure.rule=Host(`pdf.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.pdf-secure.tls=true"
+      - "traefik.http.routers.pdf-secure.service=pdf"
+      - "traefik.http.services.pdf.loadbalancer.server.port=8080" #port
+#      - "traefik.http.routers.pdf-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #homepage
+      - homepage.group=${GROUP}
+      - homepage.name=stirling-pdf
+      - homepage.icon=stirling-pdf.png
+      - homepage.href=https://pdf.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

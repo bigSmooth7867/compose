@@ -1,0 +1,67 @@
+services:
+  scraperr:
+    image: jpyles0524/scraperr:latest
+    container_name: scraperr
+    restart: unless-stopped 
+    command: ["npm", "run", "start"]
+    environment:
+      - NEXT_PUBLIC_API_URL=http://scraperr_api:8000 # your API URL
+      - SERVER_URL=http://scraperr_api:8000 # your docker container API URL
+    # ports:
+    #   - 8002:3000
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.scraperr.entrypoints=http"
+      - "traefik.http.routers.scraperr.rule=Host(`scraperr.${DOMAIN}`)" #Dom4in
+      - "traefik.http.middlewares.scraperr-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.scraperr.middlewares=scraperr-https-redirect"
+      - "traefik.http.routers.scraperr-secure.entrypoints=https"
+      - "traefik.http.routers.scraperr-secure.rule=Host(`scraperr.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.scraperr-secure.tls=true"
+      - "traefik.http.routers.scraperr-secure.service=scraperr"
+      - "traefik.http.services.scraperr.loadbalancer.server.port=3000" #port
+#      - "traefik.http.services.scraperr.loadbalancer.server.scheme=https" #if OVER HTTPS
+#      - "traefik.http.routers.scraperr-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #homepage
+      - homepage.group=${GROUP}
+      - homepage.name=scraperr
+      - homepage.icon=scraperr.png
+      - homepage.href=https://scraperr.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+  scraperr_api:
+    init: True
+    image: jpyles0524/scraperr_api:latest
+    restart: unless-stopped 
+    environment:
+      - LOG_LEVEL=INFO
+      # - SECRET_KEY=your_secret_key # used to encode authentication tokens (can be a random string)
+      # - ALGORITHM=HS256 # authentication encoding algorithm
+      # - ACCESS_TOKEN_EXPIRE_MINUTES=600 # access token expire minutes
+    container_name: scraperr_api
+    ports:
+      - 8001:8000
+    volumes:
+      - "${DOCKER_DIR}/scraperr/data:/project/app/data"
+      - "${DOCKER_DIR}/scraperr/media:/project/app/media"
+    networks:
+      - proxy
+#     labels:
+#       - "traefik.enable=true"
+#       - "traefik.http.routers.scraperr.entrypoints=http"
+#       - "traefik.http.routers.scraperr.rule=Host(`scraperr.${DOMAIN}`)" #Dom4in
+#       - "traefik.http.middlewares.scraperr-https-redirect.redirectscheme.scheme=https"
+#       - "traefik.http.routers.scraperr.middlewares=scraperr-https-redirect"
+#       - "traefik.http.routers.scraperr-secure.entrypoints=https"
+#       - "traefik.http.routers.scraperr-secure.rule=Host(`scraperr.${DOMAIN}`)" #Dom4in
+#       - "traefik.http.routers.scraperr-secure.tls=true"
+#       - "traefik.http.routers.scraperr-secure.service=scraperr"
+#       - "traefik.http.services.scraperr.loadbalancer.server.port=8000" #port
+# #      - "traefik.http.services.scraperr.loadbalancer.server.scheme=https" #if OVER HTTPS
+# #      - "traefik.http.routers.scraperr-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+#       - "traefik.docker.network=proxy"
+

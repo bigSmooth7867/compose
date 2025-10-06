@@ -1,0 +1,60 @@
+services:
+  freshrss:
+    image: freshrss/freshrss:latest
+    container_name: freshrss
+    hostname: freshrss
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - ${DOCKER_DIR}/freshrss/data:/var/www/FreshRSS/data
+      - ${DOCKER_DIR}/freshrss/extensions:/var/www/FreshRSS/extensions
+    # ports:
+    #   - 4821:80
+    env_file:
+      - secrets.env
+    environment:
+      # PUID: ${PUID}
+      # PGID: ${PGID}
+      # UMASK: 022
+      TZ: ${TZ}
+      CRON_MIN: '3,33'
+      TRUSTED_PROXY: 172.18.0.1/24
+      OIDC_ENABLED: 1
+      OIDC_X_FORWARDED_HEADERS: X-Forwarded-Host X-Forwarded-Port X-Forwarded-Proto
+      OIDC_SCOPES: openid email profile
+      OIDC_REMOTE_USER_CLAIM: preferred_username
+      OIDC_PROVIDER_METADATA_URL: https://auth.${DOMAIN}/application/o/freshrss/.well-known/openid-configuration
+    # healthcheck:
+    #   test: ["CMD", "cli/health.php"]
+    #   timeout: 10s
+    #   start_period: 60s
+    #   start_interval: 11s
+    #   interval: 75s
+    #   retries: 3
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rss.entrypoints=http"
+      - "traefik.http.routers.rss.rule=Host(`rss.${DOMAIN}`)"
+      - "traefik.http.middlewares.rss-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.rss.middlewares=rss-https-redirect"
+      - "traefik.http.routers.rss-secure.entrypoints=https"
+      - "traefik.http.routers.rss-secure.rule=Host(`rss.${DOMAIN}`)" 
+      - "traefik.http.routers.rss-secure.tls=true"
+      - "traefik.http.routers.rss-secure.service=rss"
+      - "traefik.http.services.rss.loadbalancer.server.port=80" 
+      - "traefik.docker.network=proxy"
+    #homepage
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=freshrss
+      - homepage.icon=freshrss.png
+      - homepage.href=https://rss.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true

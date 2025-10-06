@@ -1,0 +1,31 @@
+services:
+  morphos-server:
+    image: ghcr.io/danvergara/morphos-server:latest
+    container_name: morphos-server
+    # ports:
+    #   - "8514:8080"
+    volumes:
+      - "/tmp:/tmp"
+    restart: unless-stopped  # Optional: Ensures the container restarts if it stops unexpectedly.
+    networks:
+      proxy:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.convert.entrypoints=http"
+      - "traefik.http.routers.convert.rule=Host(`convert.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.convert-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.convert.middlewares=convert-https-redirect"
+      - "traefik.http.routers.convert-secure.entrypoints=https"
+      - "traefik.http.routers.convert-secure.rule=Host(`convert.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.convert-secure.tls=true"
+      - "traefik.http.routers.convert-secure.service=convert"
+      - "traefik.http.services.convert.loadbalancer.server.port=8080" #port
+#      - "traefik.http.routers.convert-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #homepage
+      - homepage.group=${GROUP}
+      - homepage.name=convert
+      - homepage.icon=convert.png
+      - homepage.href=https://convert.$DOMAIN
+    security_opt:
+      - no-new-privileges:true
