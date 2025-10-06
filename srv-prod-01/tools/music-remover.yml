@@ -22,7 +22,7 @@ services:
 #      - "traefik.http.routers.music-remover-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"
     #homepage
-      - homepage.group=${GROUP}
+      - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=music-remover
       - homepage.icon=music-remover.png
       - homepage.href=https://music-remover.$DOMAIN

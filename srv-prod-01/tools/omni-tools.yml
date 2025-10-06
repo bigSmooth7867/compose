@@ -21,7 +21,7 @@ services:
       - "traefik.http.routers.omni-tools-secure.service=omni-tools"
       - "traefik.http.services.omni-tools.loadbalancer.server.port=80"
     #homepage
-      - homepage.group=${GROUP}
+      - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=omni-tools
       - homepage.icon=omni-tools.png
       - homepage.href=https://omni-tools.${DOMAIN}

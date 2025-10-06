@@ -26,7 +26,7 @@ services:
 #      - "traefik.http.routers.scraperr-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"
     #homepage
-      - homepage.group=${GROUP}
+      - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=scraperr
       - homepage.icon=scraperr.png
       - homepage.href=https://scraperr.${DOMAIN}

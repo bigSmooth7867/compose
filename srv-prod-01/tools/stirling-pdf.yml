@@ -30,7 +30,7 @@ services:
 #      - "traefik.http.routers.pdf-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"
     #homepage
-      - homepage.group=${GROUP}
+      - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=stirling-pdf
       - homepage.icon=stirling-pdf.png
       - homepage.href=https://pdf.${DOMAIN}

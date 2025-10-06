@@ -21,7 +21,7 @@ services:
 #      - "traefik.http.routers.tools-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"
     #homepage
-      - homepage.group=${GROUP}
+      - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=it-tools
       - homepage.icon=it-tools.png
       - homepage.href=https://tools.${DOMAIN}
