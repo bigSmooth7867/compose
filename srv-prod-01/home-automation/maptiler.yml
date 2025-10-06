@@ -1,0 +1,44 @@
+
+services:
+  tileserver:
+    image: maptiler/tileserver-gl:latest
+    container_name: tileserver
+    # ports:
+    #   - "8080:8080"
+    volumes:
+      - ${DOCKER_RESOURCES}/maptiler/data:/data
+    command: ["--file", "osm-2020-02-10-v3.11_us_florida.mbtiles"]
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.maps.entrypoints=http"
+      - "traefik.http.routers.maps.rule=Host(`maps.${DOMAIN}`)" 
+      - "traefik.http.middlewares.maps-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.maps.middlewares=maps-https-redirect"
+      - "traefik.http.routers.maps-secure.entrypoints=https"
+      - "traefik.http.routers.maps-secure.rule=Host(`maps.${DOMAIN}`)" 
+      - "traefik.http.routers.maps-secure.tls=true"
+      - "traefik.http.routers.maps-secure.service=maps"
+      - "traefik.http.services.maps.loadbalancer.server.port=${PORT}" 
+#      - "traefik.http.services.maps.loadbalancer.server.scheme=https" #if OVER HTTPS
+#      - "traefik.http.routers.maps-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=maps
+      - homepage.icon=maptiler.png
+      - homepage.href=https://maps.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+networks:
+  proxy:
+    external: true
+  # hassionet:
+  #   name: hassionet
+  #   driver: bridge
+    # ipam:
+    #   config:
+    #     - subnet: 172.30.0.0/16
+    #       gateway: 172.30.0.1 

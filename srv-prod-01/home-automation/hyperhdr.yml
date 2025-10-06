@@ -1,0 +1,44 @@
+services:
+  hyperhdr:
+    image: nocturno/hyper-hdr:latest
+    container_name: hyperhdr
+    restart: unless-stopped
+    ports:
+      # - "8090:8090/tcp"    # HTTP Web UI
+      # - "8092:8092/tcp"    # HTTPS Web UI
+      - "19444:19444/tcp"  # JSON Server
+      - "19400:19400/tcp"  # Flatbuffers Server
+      - "19445:19445/tcp"  # Protocol Buffers Server
+      - "19333:19333/tcp"  # Boblight Server
+      - "5568:5568/udp"    # UDP RAW Receiver
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+       - ${DOCKER_DIR}/home_automation/hyperhdr/config:/config
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hyperhdr.entrypoints=http"
+      - "traefik.http.routers.hyperhdr.rule=Host(`hyperhdr.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.hyperhdr-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.hyperhdr.middlewares=hyperhdr-https-redirect"
+      - "traefik.http.routers.hyperhdr-secure.entrypoints=https"
+      - "traefik.http.routers.hyperhdr-secure.rule=Host(`hyperhdr.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.hyperhdr-secure.tls=true"
+      - "traefik.http.routers.hyperhdr-secure.service=hyperhdr"
+      - "traefik.http.services.hyperhdr.loadbalancer.server.port=8090" #port
+      - "traefik.http.routers.hyperhdr-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #homepage
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=hyperhdr
+      - homepage.icon=hyperion.png
+      - homepage.href=https://hyperhdr.${DOMAIN}
+
+
+    security_opt:
+      - no-new-privileges:true
+
+

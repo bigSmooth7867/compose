@@ -1,0 +1,62 @@
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: lscr.io/linuxserver/homeassistant:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=${UMASK}
+      - TZ=${TZ}
+    volumes:
+      - ${DOCKER_DIR}/home_automation/hassio:/config
+#      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    ports:
+     - "5353:5353" #/udp mDNS
+     - "1900:1900" #SSDP
+     - "1400:1400/tcp" #sonos
+     - "1443:1443/tcp" #sonos TTS
+     - "5683:5683" #unicast #shelly
+   #  - "21063:21063" #/tcp"
+    depends_on:
+      - pg_homeassistant
+      - emqx1
+    networks:
+      - hassionet
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hassio.entrypoints=http"
+      - "traefik.http.routers.hassio.rule=Host(`hassio.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.hassio-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.hassio.middlewares=hassio-https-redirect"
+      - "traefik.http.routers.hassio-secure.entrypoints=https"
+      - "traefik.http.routers.hassio-secure.rule=Host(`hassio.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.hassio-secure.tls=true"
+      - "traefik.http.routers.hassio-secure.service=hassio"
+      - "traefik.http.services.hassio.loadbalancer.server.port=8123" #port
+      - "traefik.docker.network=proxy"
+    #homepage
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=Home Assistant
+      - homepage.icon=home-assistant.png
+      - homepage.href=https://hassio.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+      
+  pg_homeassistant:
+    container_name: pg_homeassistant
+    image: docker.io/postgres:16
+    restart: unless-stopped
+    env_file:
+      - secrets.env
+    environment:
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - ${POSTGRES_DIR}/homeassistant_db/pgdata:/var/lib/postgresql/data
+    networks:
+      - hassionet
+      - pgbackwebnet
+    security_opt:
+      - no-new-privileges:true
+

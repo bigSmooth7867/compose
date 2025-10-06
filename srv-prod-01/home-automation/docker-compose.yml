@@ -1,0 +1,25 @@
+include:
+ - ${COMPOSE_DIR}/home-automation/emqx.yml
+ - ${COMPOSE_DIR}/home-automation/hassio.yml
+ - ${COMPOSE_DIR}/home-automation/esphome.yml
+ - ${COMPOSE_DIR}/home-automation/z2m.yml
+ - ${COMPOSE_DIR}/home-automation/eufy.yml
+ - ${COMPOSE_DIR}/home-automation/valetudopng.yml
+ - ${COMPOSE_DIR}/home-automation/govee2mqtt.yml
+ - ${COMPOSE_DIR}/home-automation/voice.yml
+ - ${COMPOSE_DIR}/home-automation/hyperhdr.yml
+ - ${COMPOSE_DIR}/home-automation/go2rtc.yml
+ - ${COMPOSE_DIR}/home-automation/music-assistant.yml
+
+networks:
+  hassionet:
+    name: hassionet
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.35.0.0/16
+          gateway: 172.35.0.1 
+  proxy:
+    external: true
+  pgbackwebnet:
+    external: true

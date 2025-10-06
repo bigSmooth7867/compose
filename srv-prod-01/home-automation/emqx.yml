@@ -1,0 +1,57 @@
+services:
+  emqx1:
+    container_name: emqx
+    image: emqx/emqx:latest
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=${UMASK}
+      - EMQX_NAME=emqx
+      - EMQX_HOST=home
+    volumes:
+      - ${DOCKER_DIR}/home_automation/emqx/data:/opt/emqx/data
+      - ${DOCKER_DIR}/home_automation/emqx/log:/opt/emqx/log
+    ports:
+      # - 18083:18083 #webui
+      - 1883:1883 #mqtt
+      # - 8883:8883 # MQTT over SSL/TLS port
+      # - 8083:8083 #MQTT over WebSocket
+      # - 8084:8084 #MQTT over WSS (WebSocket over SSL)
+      # - 11883:11883 #HTTP API service
+      # - 4370:4370 #EMQX distributed cluster and Mnesia data synchronization      
+      # - 5370:5370 #cluster RPC port used for load sharing
+    networks:
+      - hassionet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      # HTTP labels for web UI
+      - "traefik.http.routers.emqx.entrypoints=http"
+      - "traefik.http.routers.emqx.rule=Host(`emqx.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.emqx-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.emqx.middlewares=emqx-https-redirect"
+      - "traefik.http.routers.emqx-secure.entrypoints=https"
+      - "traefik.http.routers.emqx-secure.rule=Host(`emqx.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.emqx-secure.tls=true"
+      - "traefik.http.routers.emqx-secure.service=emqx"
+      - "traefik.http.services.emqx.loadbalancer.server.port=18083" #port
+      
+      # TCP labels for MQTT over TLS (port 8883)
+      - "traefik.tcp.routers.emqx-mqtt-tls.rule=HostSNI(`emqx.${DOMAIN}`)"
+      - "traefik.tcp.routers.emqx-mqtt-tls.entrypoints=mqtts"
+      - "traefik.tcp.routers.emqx-mqtt-tls.tls=true"
+      - "traefik.tcp.routers.emqx-mqtt-tls.tls.passthrough=true" # need to review
+      - "traefik.tcp.routers.emqx-mqtt-tls.service=emqx-mqtt-tls"
+      - "traefik.tcp.services.emqx-mqtt-tls.loadbalancer.server.port=8883"
+
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=emqx
+      - homepage.icon=emqx.png
+      - homepage.href=https://emqx.${DOMAIN}
+
+    security_opt:
+      - no-new-privileges:true

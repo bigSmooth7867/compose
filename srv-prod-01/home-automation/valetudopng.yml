@@ -1,0 +1,20 @@
+services:
+  valetudopng:
+    image: ghcr.io/erkexzcx/valetudopng:latest
+    container_name: valetudopng
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=${UMASK}
+    volumes:
+      - ${DOCKER_DIR}/home_automation/valetudopng/config.yml:/config.yml:ro
+    # ports:
+    #   - 3038:3000
+    depends_on:
+      - homeassistant
+      - emqx1
+    networks:
+      - hassionet
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,46 @@
+services:
+  music-assistant-server:
+    image: ghcr.io/music-assistant/server:latest # <<< Desired release version here (or use beta to get the latest beta version)
+    container_name: music-assistant-server
+    restart: unless-stopped
+    ports:
+      # - 8095:8095 #Web UI
+      - 8097:8097 # custom stream port (TCP 8097 by default) to stream audio to players
+    volumes:
+      - ${DOCKER_DIR}/home_automation/music-assistant-server/data:/data/
+      - ${NFS_DIR}/ssdp1/media/audio/music:/music:ro
+    # privileged caps (and security-opt) needed to mount smb folders within the container
+    # cap_add:
+    #   - SYS_ADMIN
+    #   - DAC_READ_SEARCH
+    # security_opt:
+    #   - apparmor:unconfined
+    environment:
+      # Provide logging level as environment variable.
+      # default=info, possible=(critical, error, warning, info, debug)
+      - LOG_LEVEL=info
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.music-assistant.entrypoints=http"
+      - "traefik.http.routers.music-assistant.rule=Host(`music-assistant.${DOMAIN}`)" #Dom4in
+      - "traefik.http.middlewares.music-assistant-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.music-assistant.middlewares=music-assistant-https-redirect"
+      - "traefik.http.routers.music-assistant-secure.entrypoints=https"
+      - "traefik.http.routers.music-assistant-secure.rule=Host(`music-assistant.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.music-assistant-secure.tls=true"
+      - "traefik.http.routers.music-assistant-secure.service=music-assistant"
+      - "traefik.http.services.music-assistant.loadbalancer.server.port=8095" #port
+#      - "traefik.http.services.music-assistant.loadbalancer.server.scheme=https" #if OVER HTTPS
+#      - "traefik.http.routers.music-assistant-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #homepage
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=music-assistant
+      - homepage.icon=music-assistant.png
+      - homepage.href=https://music-assistant.${DOMAIN}
+
+
+    security_opt:
+      - no-new-privileges:true

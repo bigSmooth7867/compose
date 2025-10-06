@@ -1,0 +1,22 @@
+services:
+  eufy:
+    image: bropat/eufy-security-ws:latest
+    container_name: eufy
+    restart: unless-stopped
+    env_file:
+      - secrets.env
+    environment:
+      - COUNTRY=US
+      - TRUSTED_DEVICE_NAME=Hassio
+      - STATION_IP_ADDRESSES=T8420N60210612B2:192.168.120.21
+    # ports:
+    #   - 3631:3000
+    volumes:
+      - ${DOCKER_DIR}/home_automation/eufy/data:/data
+    networks:
+      - hassionet
+#    stdin_open: true  # Equivalent to -it (interactive terminal)
+#    tty: true      
+#    network_mode: host    
+    security_opt:
+      - no-new-privileges:true

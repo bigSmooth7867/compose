@@ -1,0 +1,9 @@
+services:
+  zones:
+    image: everythingsmarthome/everything-presence-mmwave-configurator:latest
+    container_name: everything-presence-mmwave-configurator
+    environment:
+      - HA_URL= #http://10.0.1.11:8123
+      - HA_TOKEN= #123-generate-token-at-url:8123/profile/security-456
+    ports:
+      - 8099:8099

@@ -1,0 +1,16 @@
+services:
+  go2rtc:
+    image: alexxit/go2rtc #support hardware transcoding for Intel iGPU and Raspberry
+    # image: alexxit/go2rtc:latest-hardware #support hardware transcoding for Intel iGPU, AMD GPU and NVidia GPU 
+    container_name: go2rtc
+    # privileged: true         # only for FFmpeg hardware transcoding
+    restart: unless-stopped  
+    environment:
+      - TZ=${TZ} 
+    volumes:
+      - ${DOCKER_DIR}/home_automation/go2rtc/config:/config
+    # network_mode: host       # important for WebRTC, HomeKit, UDP cameras
+    networks:
+      - hassionet
+
+#need to add  /dev/dri/ ????

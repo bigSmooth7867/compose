@@ -1,0 +1,43 @@
+services:
+  zigbee2mqtt:
+    container_name: zigbee2mqtt
+    image: koenkk/zigbee2mqtt:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=${UMASK}
+    volumes:
+      - ${DOCKER_DIR}/home_automation/zigbee2mqtt:/app/data
+    restart: unless-stopped
+    # ports:
+    # - 9442:9442
+    depends_on:
+      - emqx1
+    networks:
+      - hassionet
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.z2m.entrypoints=http"
+      - "traefik.http.routers.z2m.rule=Host(`z2m.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.z2m-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.z2m.middlewares=z2m-https-redirect"
+      - "traefik.http.routers.z2m-secure.entrypoints=https"
+      - "traefik.http.routers.z2m-secure.rule=Host(`z2m.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.z2m-secure.tls=true"
+      - "traefik.http.routers.z2m-secure.service=z2m"
+      - "traefik.http.services.z2m.loadbalancer.server.port=9442" #port
+      - "traefik.http.routers.z2m-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #homepage
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=zigbee2mqtt
+      - homepage.icon=zigbee2mqtt.png
+      - homepage.href=https://z2m.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        # max-size: "10m"      # Each log file will be 10 MB max
+        max-file: "25"   

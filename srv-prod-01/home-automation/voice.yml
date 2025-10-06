@@ -1,0 +1,87 @@
+services:
+###Speech-to-text (STT)
+  whisper:
+    container_name: faster-whisper
+    # image: lscr.io/linuxserver/faster-whisper:gpu
+    image: lscr.io/linuxserver/faster-whisper:latest
+    networks:
+      - hassionet
+    # ports:
+    #   - '10300:10300'
+    volumes:
+      - faster-whisper_data:/config
+    restart: unless-stopped
+#    environment:
+#      - TZ=America/New_York
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WHISPER_MODEL=tiny-int8
+      # - WHISPER_MODEL=medium-int8
+      - WHISPER_BEAM=1 #optional
+      - WHISPER_LANG=en #optional
+    # runtime: nvidia
+    # deploy:
+    #     resources:
+    #       reservations:
+    #         devices:
+    #           - driver: nvidia
+    #             count: 1
+    #             capabilities: [gpu]      
+    security_opt:
+      - no-new-privileges:true
+
+# ###Text-to-speech (TTS)
+#   piper:
+#     container_name: piper
+#     # image: lscr.io/linuxserver/piper:gpu
+#     image: lscr.io/linuxserver/piper:latest
+#     networks:
+#       - hassionet
+#     # ports:
+#     #   - '10200:10200'
+#     volumes:
+#       - piperdata:/config
+#     restart: unless-stopped
+# #    environment:
+# #      - TZ=America/New_York
+#     environment:
+#       - PUID=${PUID}
+#       - PGID=${PGID}
+#       - TZ=${TZ}
+# #      - PIPER_VOICE=en_GB-alan-medium
+#       - PIPER_VOICE=en_GB-cori-high
+#       - PIPER_LENGTH=1.0 #optional
+#       - PIPER_NOISE=0.667 #optional
+#       - PIPER_NOISEW=0.333 #optional
+#       - PIPER_SPEAKER=0 #optional
+#       - PIPER_PROCS=1 #optional
+#     # runtime: nvidia
+#     # deploy:
+#     #     resources:
+#     #       reservations:
+#     #         devices:
+#     #           - driver: nvidia
+#     #             count: 1
+#     #             capabilities: [gpu]       
+    
+      
+  # openwakeword:
+  #   container_name: openwakeword
+  #   image: rhasspy/wyoming-openwakeword
+  #   networks:
+  #     - hassionet
+  #   ports:
+  #     - '10400:10400'
+  #   volumes:
+  #     - /mnt/nvme_cache/appdata/voice/wyoming-openwakeword/data:/data
+  #     - /mnt/nvme_cache/appdata/voice/wyoming-openwakeword/custom:/custom
+  #   command: --preload-model 'hey_jarvis' --custom-model-dir /custom
+  #   restart: unless-stopped
+  #   environment:
+  #     - TZ=America/New_York 
+
+
+volumes:
+  faster-whisper_data:

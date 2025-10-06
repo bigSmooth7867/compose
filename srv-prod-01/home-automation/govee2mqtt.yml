@@ -1,0 +1,20 @@
+services:
+  govee2mqtt:
+    image: ghcr.io/wez/govee2mqtt:latest
+    container_name: govee2mqtt
+    restart: unless-stopped
+    env_file:
+      - secrets.env
+    environment:
+      - GOVEE_MQTT_HOST=emqx
+      - GOVEE_MQTT_PORT=1883
+      - GOVEE_TEMPERATURE_SCALE=F
+      - RUST_LOG_STYLE=always
+      #- RUST_LOG=govee=trace
+      - TZ=${TZ}
+    depends_on:
+      - emqx1
+    networks:
+      - hassionet
+    security_opt:
+      - no-new-privileges:true
