@@ -1,0 +1,29 @@
+services:
+  cyberchef:
+    image: ghcr.io/gchq/cyberchef:latest
+    container_name: cyberchef
+    # ports:
+    #   - "8080:80"
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cyberchef.entrypoints=http"
+      - "traefik.http.routers.cyberchef.rule=Host(`cyberchef.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.cyberchef-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.cyberchef.middlewares=cyberchef-https-redirect"
+      - "traefik.http.routers.cyberchef-secure.entrypoints=https"
+      - "traefik.http.routers.cyberchef-secure.rule=Host(`cyberchef.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.cyberchef-secure.tls=true"
+      - "traefik.http.routers.cyberchef-secure.service=cyberchef"
+      - "traefik.http.services.cyberchef.loadbalancer.server.port=80" #port
+#      - "traefik.http.routers.cyberchef-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #homepage
+      - homepage.group=${GROUP}
+      - homepage.name=cyberchef
+      - homepage.icon=cyberchef.png
+      - homepage.href=https://cyberchef.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
