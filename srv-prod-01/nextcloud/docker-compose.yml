@@ -1,0 +1,87 @@
+services:
+  pg_nextcloud:
+    container_name: pg_nextcloud
+    image: docker.io/library/postgres:16
+    restart: unless-stopped
+    volumes:
+      - ${POSTGRES_DIR}/nextcloud_db/pgdata:/var/lib/postgresql/data
+    # environment:
+    #   - POSTGRES_DB=${PG_DB}
+    #   - POSTGRES_USER=${PG_USER}
+    #   - POSTGRES_PASSWORD=${PG_PASS}
+    networks:
+      - nextcloudnet
+      - pgbackwebnet
+    security_opt:
+      - no-new-privileges:true
+
+  nextcloud-redis:
+    container_name: nextcloud-redis
+    image: redis:7.2
+    restart: always
+    networks:
+      - nextcloudnet
+    security_opt:
+      - no-new-privileges:true
+  nextcloud:
+    container_name: nextcloud
+    image: lscr.io/linuxserver/nextcloud:latest
+    restart: unless-stopped
+    mem_limit: 2g  # Add this line
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${DOCKER_DIR}/nextcloud/config:/config # local config
+      - ${NFS_DIR}/ssdp1/docker/nextcloud:/data #NFS share to truenas
+    # ports:
+    #   - 6443:443
+    depends_on:
+      - pg_nextcloud
+      - nextcloud-redis
+    networks:
+      - nextcloudnet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.entrypoints=http"
+      - "traefik.http.routers.nextcloud.rule=Host(`nextcloud.${DOMAIN}`)"
+      - "traefik.http.middlewares.nextcloud-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.nextcloud.middlewares=nextcloud-https-redirect"
+      - "traefik.http.routers.nextcloud-secure.entrypoints=https"
+      - "traefik.http.routers.nextcloud-secure.rule=Host(`nextcloud.${DOMAIN}`)"
+      - "traefik.http.routers.nextcloud-secure.tls=true"
+      - "traefik.http.routers.nextcloud-secure.service=nextcloud"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.middlewares.secureHeaders.headers.stsSeconds=15552000"
+      - "traefik.http.middlewares.secureHeaders.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.secureHeaders.headers.stsPreload=true"
+      - "traefik.http.middlewares.secureHeaders.headers.frameDeny=true"
+      - "traefik.http.middlewares.secureHeaders.headers.customFrameOptionsValue=SAMEORIGIN"
+      - "traefik.http.middlewares.secureHeaders.headers.sslRedirect=true"
+      - "traefik.http.middlewares.secureHeaders.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.secureHeaders.headers.browserXssFilter=true"
+      - "traefik.http.routers.nextcloud-secure.middlewares=secureHeaders"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=nextcloud
+      - homepage.icon=nextcloud.png
+      - homepage.href=https://nextcloud.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  nextcloudnet:
+    name: nextcloudnet
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.58.0.0/16
+          gateway: 172.58.0.1 
+  proxy:
+    external: true
+  pgbackwebnet:
+    external: true
