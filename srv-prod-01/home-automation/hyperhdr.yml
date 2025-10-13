@@ -19,19 +19,20 @@ services:
     networks:
       - proxy
     labels:
+    #TRAEFIK
       - "traefik.enable=true"
       - "traefik.http.routers.hyperhdr.entrypoints=http"
-      - "traefik.http.routers.hyperhdr.rule=Host(`hyperhdr.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.hyperhdr.rule=Host(`hyperhdr.${DOMAIN}`)"
       - "traefik.http.middlewares.hyperhdr-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.hyperhdr.middlewares=hyperhdr-https-redirect"
       - "traefik.http.routers.hyperhdr-secure.entrypoints=https"
-      - "traefik.http.routers.hyperhdr-secure.rule=Host(`hyperhdr.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.hyperhdr-secure.rule=Host(`hyperhdr.${DOMAIN}`)"
       - "traefik.http.routers.hyperhdr-secure.tls=true"
       - "traefik.http.routers.hyperhdr-secure.service=hyperhdr"
-      - "traefik.http.services.hyperhdr.loadbalancer.server.port=8090" #port
-      - "traefik.http.routers.hyperhdr-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.http.services.hyperhdr.loadbalancer.server.port=8090"
+      - "traefik.http.routers.hyperhdr-secure.middlewares=middlewares-authentik@file"
       - "traefik.docker.network=proxy"
-    #homepage
+    #HOMEPAGE
       - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=hyperhdr
       - homepage.icon=hyperion.png

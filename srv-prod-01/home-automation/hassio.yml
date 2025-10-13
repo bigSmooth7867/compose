@@ -12,12 +12,12 @@ services:
 #      - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     ports:
-     - "5353:5353" #/udp mDNS
-     - "1900:1900" #SSDP
+     - "5353:5353"     #/udp mDNS
+     - "1900:1900"     #SSDP
      - "1400:1400/tcp" #sonos
      - "1443:1443/tcp" #sonos TTS
-     - "5683:5683" #unicast #shelly
-   #  - "21063:21063" #/tcp"
+     - "5683:5683"     #unicast #shelly
+   #  - "21063:21063"  #/tcp"
     depends_on:
       - pg_homeassistant
       - emqx1
@@ -25,18 +25,19 @@ services:
       - hassionet
       - proxy
     labels:
+    #TRAEFIK
       - "traefik.enable=true"
       - "traefik.http.routers.hassio.entrypoints=http"
-      - "traefik.http.routers.hassio.rule=Host(`hassio.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.hassio.rule=Host(`hassio.${DOMAIN}`)"
       - "traefik.http.middlewares.hassio-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.hassio.middlewares=hassio-https-redirect"
       - "traefik.http.routers.hassio-secure.entrypoints=https"
-      - "traefik.http.routers.hassio-secure.rule=Host(`hassio.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.hassio-secure.rule=Host(`hassio.${DOMAIN}`)"
       - "traefik.http.routers.hassio-secure.tls=true"
       - "traefik.http.routers.hassio-secure.service=hassio"
-      - "traefik.http.services.hassio.loadbalancer.server.port=8123" #port
+      - "traefik.http.services.hassio.loadbalancer.server.port=8123"
       - "traefik.docker.network=proxy"
-    #homepage
+    #HOMEPAGE
       - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=Home Assistant
       - homepage.icon=home-assistant.png

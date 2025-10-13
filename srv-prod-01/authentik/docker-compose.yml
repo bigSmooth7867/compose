@@ -1,0 +1,135 @@
+services:
+  pg_authentik:
+    container_name: pg_authentik
+    image: docker.io/library/postgres:16
+    restart: unless-stopped
+    # env_file:
+    #   - .env
+    # environment:
+    #   POSTGRES_PASSWORD: ${PG_PASS}
+    #   POSTGRES_USER: ${PG_USER}
+    #   POSTGRES_DB: ${PG_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]  ### need to figure out how to inject 
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    volumes:
+      - ${POSTGRES_DIR}/authentik_db/pgdata:/var/lib/postgresql/data
+    networks:
+      - authentiknet
+      - pgbackwebnet
+
+  authentik-redis:
+    image: docker.io/library/redis:alpine
+    container_name: authentik-redis
+    command: --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - redis:/data
+    networks:
+      - authentiknet
+
+  server:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.8.3}
+    container_name: authentik_server
+    restart: unless-stopped
+    command: server
+    env_file:
+      - secret.env
+    environment:
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: pg_authentik
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+    volumes:
+      - ${DOCKER_DIR}/authentik/authentik/media:/media
+      - ${DOCKER_DIR}/authentik/authentik/custom-templates:/templates
+    # ports:
+    #   - "${COMPOSE_PORT_HTTP:-9000}:9000"
+    #   - "${COMPOSE_PORT_HTTPS:-9443}:9443"
+    depends_on:
+      pg_authentik:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+    networks:
+      - authentiknet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.entrypoints=http"
+      - "traefik.http.routers.auth.rule=Host(`auth.${DOMAIN}`)"
+      - "traefik.http.middlewares.auth-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.auth.middlewares=auth-https-redirect"
+      - "traefik.http.routers.auth-secure.entrypoints=https"
+      - "traefik.http.routers.auth-secure.rule=Host(`auth.${DOMAIN}`)"
+      - "traefik.http.routers.auth-secure.tls=true"
+      - "traefik.http.routers.auth-secure.service=auth"
+      - "traefik.http.services.auth.loadbalancer.server.port=9000"
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=authentik
+      - homepage.icon=authentik.png
+      - homepage.href=https://auth.${DOMAIN}
+    # security_opt:
+    #   - no-new-privileges:true
+
+  worker:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.8.3}
+    container_name: authentik_worker
+    restart: unless-stopped
+    command: worker
+    env_file:
+      - secret.env
+    environment:
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: pg_authentik
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+    # `user: root` and the docker socket volume are optional.
+    # See more for the docker socket integration here:
+    # https://goauthentik.io/docs/outposts/integrations/docker
+    # Removing `user: root` also prevents the worker from fixing the permissions
+    # on the mounted folders, so when removing this make sure the folders have the correct UID/GID
+    # (1000:1000 by default)
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DOCKER_DIR}/authentik/authentik/media:/media
+      - ${DOCKER_DIR}/authentik/authentik/certs:/certs
+      - ${DOCKER_DIR}/authentik/authentik/custom-templates:/templates
+    depends_on:
+      pg_authentik:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy     
+    networks:
+      - authentiknet
+      - proxy
+
+volumes:
+  redis:
+    driver: local
+
+networks:
+  authentiknet:
+    name: authentiknet
+    driver: bridge
+  proxy:
+    external: true
+  pgbackwebnet:
+    external: true   
