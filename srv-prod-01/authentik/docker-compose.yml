@@ -5,12 +5,7 @@ services:
     restart: unless-stopped
     env_file:
       - secrets.env
-    # environment:
-    #   POSTGRES_PASSWORD: ${PG_PASS}
-    #   POSTGRES_USER: ${PG_USER}
-    #   POSTGRES_DB: ${PG_DB}
     healthcheck:
-      # test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       test: ["CMD-SHELL", "pg_isready -d $${AUTHENTIK_POSTGRESQL__NAME} -U $${AUTHENTIK_POSTGRESQL__USER}"]  
       start_period: 20s
       interval: 30s
@@ -48,10 +43,6 @@ services:
     environment:
       AUTHENTIK_REDIS__HOST: authentik-redis
       AUTHENTIK_POSTGRESQL__HOST: pg_authentik
-      # AUTHENTIK_POSTGRESQL__USER: ${PG_USER}
-      # AUTHENTIK_POSTGRESQL__NAME: ${PG_DB}
-      # AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
-      # AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
     volumes:
       - ${DOCKER_DIR}/authentik/authentik/media:/media
       - ${DOCKER_DIR}/authentik/authentik/custom-templates:/templates
@@ -97,16 +88,6 @@ services:
     environment:
       AUTHENTIK_REDIS__HOST: authentik-redis
       AUTHENTIK_POSTGRESQL__HOST: pg_authentik
-      # AUTHENTIK_POSTGRESQL__USER: ${PG_USER}
-      # AUTHENTIK_POSTGRESQL__NAME: ${PG_DB}
-      # AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
-      # AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
-    # `user: root` and the docker socket volume are optional.
-    # See more for the docker socket integration here:
-    # https://goauthentik.io/docs/outposts/integrations/docker
-    # Removing `user: root` also prevents the worker from fixing the permissions
-    # on the mounted folders, so when removing this make sure the folders have the correct UID/GID
-    # (1000:1000 by default)
     user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
