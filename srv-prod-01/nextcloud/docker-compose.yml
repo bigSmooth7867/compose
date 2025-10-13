@@ -23,6 +23,7 @@ services:
       - nextcloudnet
     security_opt:
       - no-new-privileges:true
+      
   nextcloud:
     container_name: nextcloud
     image: lscr.io/linuxserver/nextcloud:latest
