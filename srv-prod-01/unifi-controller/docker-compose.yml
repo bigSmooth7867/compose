@@ -1,0 +1,72 @@
+services:
+  unifi-network-application:
+    image: lscr.io/linuxserver/unifi-network-application:latest
+    restart: unless-stopped
+    container_name: unifi-network-application
+    env_file:
+      - secrets.env
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Etc/UTC
+      - MONGO_HOST=unifi-db
+      - MONGO_PORT=27017
+      - MONGO_DBNAME=unifi
+      - MEM_LIMIT=1024 #optional
+      - MEM_STARTUP=1024 #optional
+      # - MONGO_TLS= #optional
+      # - MONGO_AUTHSOURCE=admin
+    volumes:
+      - ${DOCKER_DIR}/unifi-controller:/config
+    ports:
+      # - 8443:8443 #WebGUI
+      - 3478:3478/udp #Required Unifi STUN port
+      - 10001:10001/udp #Required for AP discovery
+      - 8080:8080 #Required for device communication
+      - 1900:1900/udp #optional Required for Make controller discoverable on L2 network option
+      # - 8843:8843 #optional Unifi guest portal HTTPS redirect port
+      # - 8880:8880 #optional Unifi guest portal HTTP redirect port
+      - 6789:6789 #optional For mobile throughput test
+      - 5514:5514/udp #optional Remote syslog port
+    networks:
+      - unifinet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.unifi.entrypoints=http"
+      - "traefik.http.routers.unifi.rule=Host(`unifi.${DOMAIN}`)"
+      - "traefik.http.middlewares.unifi-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.unifi.middlewares=unifi-https-redirect"
+      - "traefik.http.routers.unifi-secure.entrypoints=https"
+      - "traefik.http.routers.unifi-secure.rule=Host(`unifi.${DOMAIN}`)"
+      - "traefik.http.routers.unifi-secure.tls=true"
+      - "traefik.http.routers.unifi-secure.service=unifi"
+      - "traefik.http.services.unifi.loadbalancer.server.port=8443"
+      - "traefik.http.services.unifi.loadbalancer.server.scheme=https"
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=unifi
+      - homepage.icon=unifi.png
+      - homepage.href=https://unifi.${DOMAIN}
+    # security_opt:
+    #   - no-new-privileges:true
+  
+  unifi-db:
+    image: docker.io/mongo:4.4
+    container_name: unifi-db
+    volumes:
+      - ${MONGO_DIR}/unifi-controller-db:/data/db
+    networks:
+      - unifinet
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  unifinet:
+    name: unifinet
+    driver: bridge
+  proxy:
+    external: true
