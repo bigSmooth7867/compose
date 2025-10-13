@@ -57,7 +57,7 @@ services:
     image: docker.io/mongo:4.4
     container_name: unifi-db
     volumes:
-      - ${MONGO_DIR}/unifi-controller-db:/data/db
+      - ${APPS_DB}/unifi-controller-db:/data/db
     networks:
       - unifinet
     restart: unless-stopped
