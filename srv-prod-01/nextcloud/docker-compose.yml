@@ -23,19 +23,19 @@ services:
       - nextcloudnet
     security_opt:
       - no-new-privileges:true
-      
+
   nextcloud:
     container_name: nextcloud
     image: lscr.io/linuxserver/nextcloud:latest
     restart: unless-stopped
-    mem_limit: 2g  # Add this line
+    mem_limit: 2g 
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - ${DOCKER_DIR}/nextcloud/config:/config # local config
-      - ${NFS_DIR}/ssdp1/docker/nextcloud:/data #NFS share to truenas
+      - ${DOCKER_DIR}/nextcloud/config:/config 
+      - ${NFS_DIR}/ssdp1/docker/nextcloud:/data 
     # ports:
     #   - 6443:443
     depends_on:
