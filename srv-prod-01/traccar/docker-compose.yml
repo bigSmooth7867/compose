@@ -1,0 +1,15 @@
+include:
+ - ${COMPOSE_DIR}/traccar/traccar.yml
+#  - ${COMPOSE_DIR}/traccar/findmy-bridge.yml
+
+
+
+
+networks:
+  traccarnet:
+    name: traccarnet
+    driver: bridge
+  proxy:
+    external: true
+  pgbackwebnet:
+    external: true

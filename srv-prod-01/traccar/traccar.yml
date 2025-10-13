@@ -1,0 +1,75 @@
+services:
+  pg_traccar:
+    image: postgres:16
+    container_name: pg_traccar
+    restart: unless-stopped
+    # environment:
+    #   - POSTGRES_USER=${PG_USER}
+    #   - POSTGRES_PASSWORD=${PG_PASS}
+    #   - POSTGRES_DB=${PG_DB}
+    volumes:
+      - ${POSTGRES_DIR}/traccar_db/pgdata:/var/lib/postgresql/data
+    networks:
+      - traccarnet
+      - pgbackwebnet
+    # healthcheck:
+    #   test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+    #   start_period: 30s
+    # logging:
+    #   driver: "json-file"
+    #   options:
+    #     max-size: "10m"
+    #     max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+      
+  traccar:
+    image: traccar/traccar:latest
+    container_name: traccar
+    hostname: traccar
+    restart: unless-stopped
+    ports:
+      - 5013:5013                     #sinotracker ST902L-4G
+      # - 1082:8082                   #WebUI
+      # - 15000-15010:5000-5010
+      # - 15000-15150:5000-5150/udp
+      # - 5055:5055                   #IOS client
+    volumes:
+      - ${DOCKER_DIR}/traccar/logs:/opt/traccar/logs:rw
+      - ${DOCKER_DIR}/traccar/traccar.xml:/opt/traccar/conf/traccar.xml:ro
+    depends_on:
+      - pg_traccar #:
+        # condition: service_healthy
+    networks:
+      - traccarnet
+      - proxy
+      #change the for ram usage
+    command: >
+      -Djava.net.preferIPv4Stack=true
+      -Xms512m
+      -Xmx512m
+      -jar tracker-server.jar conf/traccar.xml
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.traccar.entrypoints=http"
+      - "traefik.http.routers.traccar.rule=Host(`traccar.${DOMAIN}`)"
+      - "traefik.http.middlewares.traccar-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.traccar.middlewares=traccar-https-redirect"
+      - "traefik.http.routers.traccar-secure.entrypoints=https"
+      - "traefik.http.routers.traccar-secure.rule=Host(`traccar.${DOMAIN}`)"
+      - "traefik.http.routers.traccar-secure.tls=true"
+      - "traefik.http.routers.traccar-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traccar-secure.service=traccar"
+      - "traefik.http.services.traccar.loadbalancer.server.port=8082"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=traccar
+      - homepage.icon=traccar.png
+      - homepage.href=https://traccar.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,19 @@
+services:
+  bridge:
+    build: https://github.com/jannisko/findmy-traccar-bridge.git
+    volumes:
+      - ./:/bridge/data
+      # Optional: Mount a directory with plist files for AirTags
+      - /path/to/your/plists:/bridge/plists
+    environment:
+      # For OpenHaystack beacons, specify their private keys
+      BRIDGE_PRIVATE_KEYS: "<key1>,<key2>,..."
+      BRIDGE_TRACCAR_SERVER: "<your traccar base url>:5055"
+      BRIDGE_ANISETTE_SERVER: "http://anisette:6969"
+
+  anisette:
+    image: dadoum/anisette-v3-server
+    volumes:
+      - anisette_data:/home/Alcoholic/.config/anisette-v3/lib/
+# volumes:
+#   anisette_data:
