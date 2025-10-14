@@ -1,0 +1,124 @@
+services:
+  paperless-redis:
+    container_name: paperless-redis
+    image: docker.io/library/redis:7
+    # image: docker.io/library/redis:7.2
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    networks:
+      - paperlessnet
+    security_opt:
+      - no-new-privileges:true
+
+  pg_paperless:
+    container_name: pg_paperless
+    image: docker.io/library/postgres:16
+    restart: unless-stopped
+    volumes:
+      - ${POSTGRES_DIR}/paperless_db/pgdata:/var/lib/postgresql/data
+    # environment:
+    #   - POSTGRES_DB=${PG_DB}
+    #   - POSTGRES_USER=${PG_USER}
+    #   - POSTGRES_PASSWORD=${PG_PASS}
+    networks:
+      - paperlessnet
+      - pgbackwebnet
+    security_opt:
+      - no-new-privileges:true
+
+  paperless-webserver:
+    container_name: paperless-webserver  
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    depends_on:
+      - pg_paperless
+      - paperless-redis
+      - gotenberg
+      - tika
+    #ports:
+    #  - "8005:8000"
+    volumes:
+      - ${NFS_DIR}/ssdp1/docker/paperless/paperless_webserver/data:/usr/src/paperless/data
+      - ${NFS_DIR}/ssdp1/docker/paperless/paperless_webserver/media:/usr/src/paperless/media
+      - ${DOCKER_RESOURCES}/paperless/export:/usr/src/paperless/export #The document exporter exports all your documents, thumbnails, metadata, and database contents 
+      # - ${CONSUME_FOLDER}:/usr/src/paperless/consume 
+      # - ${CONSUME_FOLDER}/Omar:/usr/src/paperless/consume/Omar
+      # - ${CONSUME_FOLDER}/Vasantika:/usr/src/paperless/consume/Vasantika
+    env_file:
+      - secrets.env
+    environment:
+      - COMPOSE_PROJECT_NAME=paperless
+      - PAPERLESS_REDIS=redis://paperless-redis:6379
+      - PAPERLESS_DBHOST=pg_paperless
+      - PAPERLESS_TIKA_ENABLED=1
+      - PAPERLESS_TIKA_GOTENBERG_ENDPOINT=http://gotenberg:3000
+      - PAPERLESS_TIKA_ENDPOINT=http://tika:9998
+      - PAPERLESS_URL=https://paperless.${DOMAIN}
+      - PAPERLESS_CONSUMER_RECURSIVE=true
+      - PAPERLESS_OCR_LANGUAGE=eng
+      - PAPERLESS_TIME_ZONE=${TZ}
+      #- PAPERLESS_SECRET_KEY=
+      - PAPERLESS_APPS=allauth.socialaccount.providers.openid_connect
+      - PAPERLESS_DISABLE_REGULAR_LOGIN=true
+      - PAPERLESS_AUTO_LOGIN=true
+      - PAPERLESS_AUTO_CREATE=true
+      - PAPERLESS_LOGOUT_REDIRECT_URL="https://auth.${DOMAIN}/application/o/paperless/end-session/"
+    networks:
+      - paperlessnet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.paperless.entrypoints=http"
+      - "traefik.http.routers.paperless.rule=Host(`paperless.${DOMAIN}`)"
+      - "traefik.http.middlewares.paperless-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.paperless.middlewares=paperless-https-redirect"
+      - "traefik.http.routers.paperless-secure.entrypoints=https"
+      - "traefik.http.routers.paperless-secure.rule=Host(`paperless.${DOMAIN}`)"
+      - "traefik.http.routers.paperless-secure.tls=true"
+      - "traefik.http.routers.paperless-secure.tls.certresolver=cloudflare" # change this to your cert resolver
+      - "traefik.http.routers.paperless-secure.service=paperless" 
+      - "traefik.http.services.paperless.loadbalancer.server.port=8000"
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=paperless
+      - homepage.icon=paperless.png
+      - homepage.href=https://paperless.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+  gotenberg:
+    image: docker.io/gotenberg/gotenberg:8.7
+    restart: unless-stopped
+    # The gotenberg chromium route is used to convert .eml files. We do not
+    # want to allow external content like tracking pixels or even javascript.
+    command:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+    networks:
+      - paperlessnet
+    security_opt:
+      - no-new-privileges:true
+
+  tika:
+    image: ghcr.io/paperless-ngx/tika:latest
+    restart: unless-stopped
+    networks:
+      - paperlessnet
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  redisdata:
+
+networks:
+  paperlessnet:
+    name: paperlessnet
+    driver: bridge
+  proxy:
+    external: true
+  pgbackwebnet:
+    external: true
