@@ -1,0 +1,74 @@
+services:
+  immich-server:
+    container_name: immich_server
+    image: ghcr.io/immich-app/immich-server:release
+    user: "1000:1000"
+    # extends:
+    #   file: hwaccel.transcoding.yml
+    #   service: cpu # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
+    volumes:
+      # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
+      - /etc/localtime:/etc/localtime:ro
+      - ${NFS_DIR}/ssdp1/docker/immich/immich:/usr/src/app/upload #UPLOADS
+      - ${NFS_DIR}/ssdp1/photos/1.scanned_photos/1.scans:/mnt/scans:ro
+    env_file:
+      - secrets.env
+    environment:
+      - TZ=${TZ}
+      - DB_HOSTNAME=immich_db
+    # ports:
+    #   - 2283:2283
+    depends_on:
+      - redis
+      - immich_db
+    restart: always
+    healthcheck:
+      disable: false
+    networks:
+      - immichnet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich-server.entrypoints=http"
+      - "traefik.http.routers.immich-server.rule=Host(`photos.${DOMAIN}`)" 
+      - "traefik.http.middlewares.immich-server-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.immich-server.middlewares=immich-server-https-redirect"
+      - "traefik.http.routers.immich-server-secure.entrypoints=https"
+      - "traefik.http.routers.immich-server-secure.rule=Host(`photos.${DOMAIN}`)" 
+      - "traefik.http.routers.immich-server-secure.tls=true"
+      - "traefik.http.routers.immich-server-secure.service=immich-server"
+      - "traefik.http.services.immich-server.loadbalancer.server.port=2283" 
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=immich
+      - homepage.icon=immich.png
+      - homepage.href=https://photos.${DOMAIN}
+
+  redis:
+    container_name: immich_redis
+    image: docker.io/valkey/valkey:8-bookworm@sha256:fea8b3e67b15729d4bb70589eb03367bab9ad1ee89c876f54327fc7c6e618571
+    healthcheck:
+      test: redis-cli ping || exit 1
+    restart: always
+    networks:
+      - immichnet
+
+  immich_db:
+    container_name: immich_db
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    environment:
+      # POSTGRES_PASSWORD: ${PG_PASS}
+      # POSTGRES_USER: ${PG_USER}
+      # POSTGRES_DB: ${PG_DB}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      - ${APPS_DB}/immich_db:/var/lib/postgresql/data
+    shm_size: 128mb
+    restart: always
+    networks:
+      - immichnet
+
+
+

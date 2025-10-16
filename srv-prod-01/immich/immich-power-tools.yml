@@ -1,0 +1,59 @@
+services:
+  immich_power_tools:
+    container_name: immich_power_tools
+    image: ghcr.io/varun-raj/immich-power-tools:latest
+    restart: unless-stopped
+    # ports:
+    #   - "8721:3000"
+    depends_on:
+      - immich-server
+      - immich_db 
+    environment:
+      # - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - IMMICH_URL=http://immich-server:2283 # Immich URL
+      # - IMMICH_API_KEY=${APIKEY_IPT} # Immich API Key
+      - EXTERNAL_IMMICH_URL=https://photos.${DOMAIN} # External address of immich
+      # - DB_USERNAME=${PG_USER} # Postgress Database Username
+      # - DB_PASSWORD=${PG_PASS} # Postgres Database Password
+      # - DB_DATABASE_NAME=${PG_DB} # Name of the database 
+      - DB_HOST=immich_db # Postgres Host (IP address or hostname of the database)
+      - DB_PORT=5432 # Postgres Port number (Default: 5432)
+      # Additional configuration
+      - SECURE_COOKIE=true # Set to true to enable secure cookies
+      # Optional
+      # - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY} # Google Maps API Key for heatmap
+      # - GEMINI_API_KEY=${GEMINI_API_KEY} # Gemini API Key for parsing search query in "Find"
+      # Immich Share Link
+      # - IMMICH_SHARE_LINK_KEY="" # Share link key for Immich
+      # - POWER_TOOLS_ENDPOINT_URL="" # URL of the Power Tools endpoint (Used for share links)
+    env_file:
+      - secrets.env
+    networks:
+      - proxy
+      - immichnet      
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.ipt.entrypoints=http"
+      - "traefik.http.routers.ipt.rule=Host(`ipt.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.ipt-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.ipt.middlewares=ipt-https-redirect"
+      - "traefik.http.routers.ipt-secure.entrypoints=https"
+      - "traefik.http.routers.ipt-secure.rule=Host(`ipt.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.ipt-secure.tls=true"
+      - "traefik.http.routers.ipt-secure.service=ipt"
+      - "traefik.http.services.ipt.loadbalancer.server.port=3000" #port
+#      - "traefik.http.services.ipt.loadbalancer.server.scheme=https" #if OVER HTTPS
+      - "traefik.http.routers.ipt-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #homepage
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=imch power tools
+      - homepage.icon=/icons/immich-power-tools.png
+      - homepage.href=https://ipt.${DOMAIN}
+    #PIHOLE-DNS
+      - pihole.custom-record=[["ipt.${DOMAIN}", "${IP}"]]
+
+    security_opt:
+      - no-new-privileges:true

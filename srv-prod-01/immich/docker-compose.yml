@@ -1,0 +1,19 @@
+include:
+ - ${COMPOSE_DIR}/immich/immich.yml
+ - ${COMPOSE_DIR}/immich/immich-power-tools.yml
+ - ${COMPOSE_DIR}/immich/immich-frame.yml
+ - ${COMPOSE_DIR}/immich/immich-kiosk.yml
+ - ${COMPOSE_DIR}/immich/immich-public-proxy.yml
+#  - ${COMPOSE_DIR}/immich/immich-drop.yml 
+#  - ${COMPOSE_DIR}/immich/immich-machine-learning.yml
+
+
+networks:
+  immichnet:
+    name: immichnet
+    driver: bridge
+  proxy:
+    external: true
+
+
+

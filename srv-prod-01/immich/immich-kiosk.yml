@@ -1,0 +1,32 @@
+services:
+  immich-kiosk:
+    image: ghcr.io/damongolding/immich-kiosk:latest
+    container_name: immich-kiosk
+    tty: true
+    environment:
+      LANG: "en_US"
+      TZ: "${TZ}"
+    # ports:
+    #   - 3000:3000
+    volumes:
+      - ${DOCKER_DIR}/immich/immich-kiosk/config.yaml:/config.yaml
+      # - ./custom.css:/custom.css
+    restart: unless-stopped
+    networks:
+      - immichnet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich-kiosk.entrypoints=http"
+      - "traefik.http.routers.immich-kiosk.rule=Host(`kiosk.${DOMAIN}`)" 
+      - "traefik.http.middlewares.immich-kiosk-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.immich-kiosk.middlewares=immich-kiosk-https-redirect"
+      - "traefik.http.routers.immich-kiosk-secure.entrypoints=https"
+      - "traefik.http.routers.immich-kiosk-secure.rule=Host(`kiosk.${DOMAIN}`)" 
+      - "traefik.http.routers.immich-kiosk-secure.tls=true"
+      - "traefik.http.routers.immich-kiosk-secure.service=immich-kiosk"
+      - "traefik.http.services.immich-kiosk.loadbalancer.server.port=3000" 
+      - "traefik.docker.network=proxy"
+    security_opt:
+      - no-new-privileges:true

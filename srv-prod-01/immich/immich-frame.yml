@@ -1,0 +1,32 @@
+# name: immichframe
+services:
+  immich-frame:
+    container_name: immich-frame
+    image: ghcr.io/immichframe/immichframe:latest
+    restart: unless-stopped
+    volumes:
+      - ${DOCKER_DIR}/immich/immich-frame/config:/app/Config
+    #   - ${DOCKER_DIR}/immich/immich-frame/custom-css/custom.css:/app/wwwroot/static/custom.css
+    # ports:
+    #   - "8080:8080"
+    environment:
+      - TZ=${TZ}
+      # - ImmichServerUrl=https://photos.${DOMAIN}
+      # - ApiKey=
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich-frame.entrypoints=http"
+      - "traefik.http.routers.immich-frame.rule=Host(`frame.${DOMAIN}`)" 
+      - "traefik.http.middlewares.immich-frame-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.immich-frame.middlewares=immich-frame-https-redirect"
+      - "traefik.http.routers.immich-frame-secure.entrypoints=https"
+      - "traefik.http.routers.immich-frame-secure.rule=Host(`frame.${DOMAIN}`)" 
+      - "traefik.http.routers.immich-frame-secure.tls=true"
+      - "traefik.http.routers.immich-frame-secure.service=immich-frame"
+      - "traefik.http.services.immich-frame.loadbalancer.server.port=8080" 
+      - "traefik.docker.network=proxy"
+    security_opt:
+      - no-new-privileges:true

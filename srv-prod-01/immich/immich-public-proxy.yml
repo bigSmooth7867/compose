@@ -1,0 +1,35 @@
+services:
+  immich-public-proxy:
+    image: alangrainger/immich-public-proxy:latest
+    container_name: immich-public-proxy
+    restart: always
+    # ports:
+    #   - "3000:3000"
+    environment:
+      - IMMICH_URL=http://immich_server:2283 # local URL for Immich. This should not be a public URL.
+      - PUBLIC_BASE_URL=https://pics.${DOMAIN}
+    depends_on:
+      - immich-server
+    volumes:
+      - ${DOCKER_DIR}/immich/immich-public-proxy/config/config.json:/app/config.json:ro #Optional Configuation
+    # healthcheck:
+    #   test: wget -q --spider http://localhost:3000/share/healthcheck || exit 1
+    #   start_period: 10s
+    #   timeout: 5s
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich-proxy.entrypoints=http"
+      - "traefik.http.routers.immich-proxy.rule=Host(`pics.${DOMAIN}`)" 
+      - "traefik.http.middlewares.immich-proxy-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.immich-proxy.middlewares=immich-proxy-https-redirect"
+      - "traefik.http.routers.immich-proxy-secure.entrypoints=https"
+      - "traefik.http.routers.immich-proxy-secure.rule=Host(`pics.${DOMAIN}`)" 
+      - "traefik.http.routers.immich-proxy-secure.tls=true"
+      - "traefik.http.routers.immich-proxy-secure.service=immich-proxy"
+      - "traefik.http.services.immich-proxy.loadbalancer.server.port=3000" 
+      - "traefik.docker.network=proxy"
+    security_opt:
+      - no-new-privileges:true

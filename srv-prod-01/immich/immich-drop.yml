@@ -1,0 +1,58 @@
+services:
+  immich-drop:
+    image: ghcr.io/nasogaa/immich-drop:latest
+    pull_policy: always
+    container_name: immich-drop
+    restart: unless-stopped
+    # Configure all settings here (no .env required)
+    environment:
+      # Immich connection (must include /api)
+      IMMICH_BASE_URL: https://photos.${DOMAIN}/api
+      IMMICH_API_KEY:
+      # Optional behavior
+      IMMICH_ALBUM_NAME: dead-drop
+      PUBLIC_UPLOAD_PAGE_ENABLED: "false"   # keep disabled by default
+      PUBLIC_BASE_URL: https://upload.${DOMAIN}
+      # Large files: chunked uploads (bypass 100MB proxy limits)
+      CHUNKED_UPLOADS_ENABLED: "false"      # enable chunked uploads
+      CHUNK_SIZE_MB: "95"                  # per-chunk size (MB)
+      # App internals
+      SESSION_SECRET: ${SESSION_SECRET}
+    # Expose the app on the host
+    # ports:
+    #   - 8080:8080
+    # Persist local dedupe cache (state.db) across restarts
+    volumes:
+      - immich_drop_data:/data
+    # Simple healthcheck
+    # healthcheck:
+    #   test: ["CMD-SHELL", "python - <<'PY'\nimport os,urllib.request,sys; url=f\"http://127.0.0.1:{os.getenv('PORT','8080')}/\";\ntry: urllib.request.urlopen(url, timeout=3); sys.exit(0)\nexcept Exception: sys.exit(1)\nPY"]
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
+    #   start_period: 10s
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich-drop.entrypoints=http"
+      - "traefik.http.routers.immich-drop.rule=Host(`upload.${DOMAIN}`)" 
+      - "traefik.http.middlewares.immich-drop-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.immich-drop.middlewares=immich-drop-https-redirect"
+      - "traefik.http.routers.immich-drop-secure.entrypoints=https"
+      - "traefik.http.routers.immich-drop-secure.rule=Host(`upload.${DOMAIN}`)" 
+      - "traefik.http.routers.immich-drop-secure.tls=true"
+      - "traefik.http.routers.immich-drop-secure.service=immich-drop"
+      - "traefik.http.services.immich-drop.loadbalancer.server.port=8080" 
+      - "traefik.docker.network=proxy"
+    # #HOMEPAGE
+    #   - homepage.group=${HOMEPAGE_GROUP}
+    #   - homepage.name=immich-drop
+    #   - homepage.icon=immich-drop.png
+    #   - homepage.href=https://immich-drop.${DOMAIN}
+    # security_opt:
+    #   - no-new-privileges:true
+
+# volumes:
+#   immich_drop_data:
