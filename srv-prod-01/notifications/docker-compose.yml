@@ -1,0 +1,9 @@
+include:
+ - ${COMPOSE_DIR}/notifications/apprise.yml
+ - ${COMPOSE_DIR}/notifications/mailrise.yml
+ - ${COMPOSE_DIR}/notifications/gotify.yml
+ - ${COMPOSE_DIR}/notifications/bark.yml
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,26 @@
+services:
+  mailrise:
+    image: yoryan/mailrise:latest
+    container_name: mailrise
+    # ports:
+    #   - '8025:8025' # Exposes port 8025 for Mailrise's SMTP server
+    restart: unless-stopped
+    volumes:
+      - ${DOCKER_DIR}/notifications/mailrise/mailrise.conf:/etc/mailrise.conf # Mounts your Mailrise configuration file
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.mailrise.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.mailrise.tls=true"
+      # - "traefik.tcp.routers.mailrise.tls.certresolver=cloudflare"
+      - "traefik.tcp.routers.mailrise.tls.domains[0].main=mailrise.${DOMAIN}"
+      - "traefik.tcp.routers.mailrise.tls.domains[0].sans="
+      # - "traefik.tcp.routers.mailrise.service=mailrise-service"
+      - "traefik.tcp.routers.mailrise.entrypoints=mailsecure"
+      - "traefik.tcp.services.mailrise.loadbalancer.server.port=8025" # don't think i need it
+      - "traefik.docker.network=proxy"
+
+
+

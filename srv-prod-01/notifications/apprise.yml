@@ -1,0 +1,53 @@
+services:
+  apprise-api:
+    # image: lscr.io/linuxserver/apprise-api:latest
+    image: caronc/apprise:latest
+    container_name: apprise-api
+    environment:
+      # - PUID=${PUID}
+      # - PGID=${PGID}
+      - APPRISE_CONFIG_LOCK=yes
+      - APPRISE_STATEFUL_MODE=simple
+      - APPRISE_WORKER_COUNT=1
+      # - APPRISE_PLUGIN_PATHS=/plugin
+      # - TZ=${TZ}
+      # - LOG_LEVEL=DEBUG
+      # - DEBUG=yes 
+    volumes:
+      - ${DOCKER_DIR}/notifications/apprise/config:/config
+      - ${DOCKER_DIR}/notifications/apprise/etc/nginx/override.conf:/etc/nginx/location-override.conf:ro 
+      - ${DOCKER_DIR}/notifications/apprise/etc/nginx/apprise_api.htpasswd:/etc/nginx/.htpasswd:ro
+      - ${DOCKER_DIR}/notifications/apprise/plugin:/plugin
+      - ${DOCKER_DIR}/notifications/apprise/attach:/attach 
+    # ports:
+    #   - 8000:8000
+    restart: unless-stopped
+    # healthcheck:
+    #   test: ["CMD", "curl", "--fail", "http://localhost/status"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 5s
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.apprise.entrypoints=http"
+      - "traefik.http.routers.apprise.rule=Host(`apprise.${DOMAIN}`)"
+      - "traefik.http.middlewares.apprise-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.apprise.middlewares=apprise-https-redirect"
+      - "traefik.http.routers.apprise-secure.entrypoints=https"
+      - "traefik.http.routers.apprise-secure.rule=Host(`apprise.${DOMAIN}`)" 
+      - "traefik.http.routers.apprise-secure.tls=true"
+      - "traefik.http.routers.apprise-secure.service=apprise"
+      - "traefik.http.services.apprise.loadbalancer.server.port=8000"
+      # - "traefik.http.routers.apprise-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=apprise
+      - homepage.icon=apprise.png
+      - homepage.href=https://apprise.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

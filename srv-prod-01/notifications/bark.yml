@@ -1,0 +1,32 @@
+services:
+  bark-server:
+    image: finab/bark-server
+    container_name: bark-server
+    restart: unless-stopped
+    volumes:
+      - ${DOCKER_DIR}/notifications/bark/data:/data
+    # ports:
+    #   - "5457:8080"
+    command: bark-server --max-apns-client-count 4
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.bark.entrypoints=http"
+      - "traefik.http.routers.bark.rule=Host(`bark.${DOMAIN}`)" 
+      - "traefik.http.middlewares.bark-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.bark.middlewares=bark-https-redirect"
+      - "traefik.http.routers.bark-secure.entrypoints=https"
+      - "traefik.http.routers.bark-secure.rule=Host(`bark.${DOMAIN}`)" 
+      - "traefik.http.routers.bark-secure.tls=true"
+      - "traefik.http.routers.bark-secure.service=bark"
+      - "traefik.http.services.bark.loadbalancer.server.port=8080" 
+#      - "traefik.http.services.bark.loadbalancer.server.scheme=https" #if OVER HTTPS
+#      - "traefik.http.routers.bark-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+
+# networks:
+#   proxy:
+#     external: true
+
