@@ -1,0 +1,91 @@
+services:
+  romm:
+    image: rommapp/romm:latest
+    container_name: romm
+    restart: unless-stopped
+    env_file:
+      - secrets.env
+    environment:
+      # Database config
+      - ROMM_DB_DRIVER=postgresql
+      - DB_HOST=pg_romm
+      - DB_PORT=5432
+      #OIDC
+      - OIDC_ENABLED=true
+      - OIDC_PROVIDER=authentik
+      - OIDC_REDIRECT_URI=https://romm.${DOMAIN}/api/oauth/openid
+      - OIDC_SERVER_APPLICATION_URL=https://auth.${DOMAIN}/application/o/romm
+    volumes:
+      # Resources fetched from IGDB (covers, screenshots, etc.)
+      # - ${DOCKER_RESOURCES}/romm-resources:/romm/resources #LOCAL
+      # - ${NFS_DIR}/media_ssdp1/romm-resources:/romm/resources #TRUENAS ssdp1
+      - ${NFS_DIR}/tank/roms/romm/romm-resources:/romm/resources #TRUENAS Tank
+      # Uploaded saves, states, etc.
+      - ${NFS_DIR}/tank/roms/romm/romm_assets:/romm/assets
+      # Your game library
+      - ${NFS_DIR}/tank/roms/library:/romm/library 
+      - ${DOCKER_DIR}/romm/config:/romm/config # Path where config.yml is stored
+      - ${DOCKER_DIR}/romm/logs:/romm/logs # [Optional] Path where logs are stored
+      - romm_redis_data:/redis-data #Cached data for background tasks
+    # ports:
+    #   - 8081:8080
+    depends_on:
+      - pg_romm
+    networks:
+      - rommnet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.romm.entrypoints=http"
+      - "traefik.http.routers.romm.rule=Host(`romm.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.romm-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.romm.middlewares=romm-https-redirect"
+      - "traefik.http.routers.romm-secure.entrypoints=https" 
+      - "traefik.http.routers.romm-secure.rule=Host(`romm.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.romm-secure.tls=true"
+      - "traefik.http.routers.romm-secure.service=romm"
+      - "traefik.http.services.romm.loadbalancer.server.port=8080" #port
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=romm
+      - homepage.icon=romm.png
+      - homepage.href=https://romm.${DOMAIN}
+      # - homepage.description=Media server
+    security_opt:
+      - no-new-privileges:true
+
+  pg_romm:
+    container_name: pg_romm
+    image: docker.io/library/postgres:16
+    restart: unless-stopped
+    volumes:
+      - ${POSTGRES_DIR}/romm_db:/var/lib/postgresql/data
+    # environment:
+    #   - POSTGRES_DB=${PG_DB}
+    #   - POSTGRES_USER=${PG_USER}
+    #   - POSTGRES_PASSWORD=${PG_PASS}
+    # healthcheck:
+    #   test: ["CMD", "pg_isready", "-U", "${PG_USER}", "-d", "${PG_DB}"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 3
+    #   start_period: 30s
+    networks:
+      - rommnet
+      # - pgbackwebnet
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  romm_redis_data:
+
+networks:
+  rommnet:
+    name: rommnet
+    driver: bridge
+  proxy:
+    external: true
+  # pgbackwebnet:
+  #   external: true
