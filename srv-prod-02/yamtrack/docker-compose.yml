@@ -1,0 +1,91 @@
+services:
+  yamtrack:
+    container_name: yamtrack
+    image: ghcr.io/fuzzygrim/yamtrack
+    restart: unless-stopped
+    depends_on:
+      - pg_yamtrack
+      - redis
+    env_file:
+      - secrets.env
+    environment:
+      - TZ=${TZ}
+      - REDIS_URL=redis://redis:6379
+      - DB_HOST=pg_yamtrack
+      - DB_PORT=5432
+      # - DB_NAME=${PG_DB}
+      # - DB_USER=${PG_USER}
+      # - DB_PASSWORD=${PG_PASS}
+      - CSRF=https://watchlist.${DOMAIN}
+      - URLS=https://watchlist.${DOMAIN}
+      - ALLOWED_HOSTS=* #https://watchlist.${DOMAIN}
+      # - SECRET=${SECRET}
+      - REGISTRATION=true #change?
+      - REDIRECT_LOGIN_TO_SSO=true
+      - SOCIALACCOUNT_ONLY=true
+      - SOCIAL_PROVIDERS=allauth.socialaccount.providers.openid_connect
+      # - SOCIALACCOUNT_PROVIDERS=${SOCIALACCOUNT_PROVIDERS}
+    # # ports:
+    #   - "8000:8000"
+    networks:
+      - yamtracknet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.yamtrack.entrypoints=http"
+      - "traefik.http.routers.yamtrack.rule=Host(`watchlist.${DOMAIN}`)"
+      - "traefik.http.middlewares.yamtrack-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.yamtrack.middlewares=yamtrack-https-redirect"
+      - "traefik.http.routers.yamtrack-secure.entrypoints=https"
+      - "traefik.http.routers.yamtrack-secure.rule=Host(`watchlist.${DOMAIN}`)" 
+      - "traefik.http.routers.yamtrack-secure.tls=true"
+      - "traefik.http.routers.yamtrack-secure.service=yamtrack"
+      - "traefik.http.services.yamtrack.loadbalancer.server.port=8000" 
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=yamtrack
+      - homepage.icon=yamtrack.png
+      - homepage.href=https://watchlist.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+  pg_yamtrack:
+    image: postgres:16
+    container_name: pg_yamtrack
+    # environment:
+    #   - POSTGRES_DB=${PG_DB}
+    #   - POSTGRES_USER=${PG_USER}
+    #   - POSTGRES_PASSWORD=${PG_PASS}
+    volumes:
+      - ${POSTGRES_DIR}/yamtrack_db/pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - yamtracknet
+      # - pgbackwebnet
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    container_name: yamtrack-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - yamtracknet
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  redis_data:
+
+networks:
+  yamtracknet:
+    name: yamtracknet
+    driver: bridge
+  proxy:
+    external: true
+  # pgbackwebnet:
+  #   external: true

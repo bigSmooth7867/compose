@@ -1,0 +1,11 @@
+services:
+  newt:
+    image: fosrl/newt
+    container_name: newt
+    restart: unless-stopped
+    env_file:
+      - secrets.env
+    environment:
+      - PANGOLIN_ENDPOINT=https://pangolin.${DOMAIN}
+      # - NEWT_ID=${NEWT_ID}
+      # - NEWT_SECRET=${NEWT_SECRET}
