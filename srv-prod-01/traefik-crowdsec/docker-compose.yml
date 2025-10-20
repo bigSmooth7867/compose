@@ -1,0 +1,109 @@
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"      # Each log file max 50MB
+        max-file: "5"  
+    ports:
+      - 80:80
+      - 81:81 # external http
+      - 443:443
+      - 444:444 # external https
+      - 465:465 # SMTP clients
+      # - 1883:1883 # Add this for MQTT
+      - 8883:8883 # Add this for MQTT over TLS
+    secrets:
+      - cf-token # the secret at the top of this file
+    env_file:
+      - secrets.env 
+    environment:
+      # - GODEBUG=http2xconnect=0 #fix issue removed after update
+      - TRAEFIK_DASHBOARD_CREDENTIALS=${TRAEFIK_DASHBOARD_CREDENTIALS}
+      - CF_DNS_API_TOKEN_FILE=/run/secrets/cf-token # see https://doc.traefik.io/traefik/https/acme/#providers
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${DOCKER_DIR}/traefik-crowdsec/traefik/traefik.yml:/traefik.yml:ro
+      - ${DOCKER_DIR}/traefik-crowdsec/traefik/acme.json:/acme.json
+      - ${DOCKER_DIR}/traefik-crowdsec/traefik/config.yml:/config.yml:ro
+      - ${DOCKER_DIR}/traefik-crowdsec/traefik/logs:/var/log/traefik
+    networks:
+      proxy:
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.rule=Host(`traefik-dashboard.${DOMAIN}`)"
+      # - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik-dashboard.${DOMAIN}`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=${DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${DOMAIN}"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+      - "traefik.http.routers.traefik-secure.middlewares=middlewares-authentik@file" 
+    #HOMEPAGE
+      - homepage.group=${GROUP}
+      - homepage.name=traefik
+      - homepage.icon=traefik.png
+      - homepage.href=https://traefik-dashboard.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    environment:
+      GID: "${GID-1000}"
+      COLLECTIONS: "crowdsecurity/linux crowdsecurity/traefik"
+    volumes:
+      - ${DOCKER_DIR}/traefik-crowdsec/crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
+      - ${DOCKER_DIR}/traefik-crowdsec/crowdsec/db:/var/lib/crowdsec/data/
+      - ${DOCKER_DIR}/traefik-crowdsec/crowdsec/config:/etc/crowdsec/
+      - ${DOCKER_DIR}/traefik-crowdsec/traefik/logs:/var/log/traefik/:ro
+    ports:
+      - 6060:6060 #Prometheus for Grafana Monitoring
+    networks:
+      - proxy
+    depends_on:
+      - traefik
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  bouncer-traefik:
+    image: docker.io/fbonalair/traefik-crowdsec-bouncer:latest
+    container_name: bouncer-traefik
+    env_file:
+      - secrets.env
+    environment:
+      - CROWDSEC_AGENT_HOST=crowdsec:8080
+    networks:
+      - proxy
+    depends_on:
+      - crowdsec
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    # healthcheck:  
+    #     test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/v1/forwardAuth"]  
+    #     interval: 30s  
+    #     timeout: 10s  
+    #     retries: 3
+
+secrets:
+  cf-token:
+    file: ${SECRETS_DIR}/traefik/cf-token
+
+networks:
+   proxy:
+    external: true
