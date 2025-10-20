@@ -9,13 +9,13 @@ services:
         max-size: "50m"      # Each log file max 50MB
         max-file: "5"  
     ports:
-      - 80:80
-      - 81:81 # external http
-      - 443:443
-      - 444:444 # external https
-      - 465:465 # SMTP clients
-      # - 1883:1883 # Add this for MQTT
+      - 80:80     # internal http
+      - 81:81     # external http
+      - 443:443   # internal https
+      - 444:444   # external https
+      - 465:465   # SMTP clients
       - 8883:8883 # Add this for MQTT over TLS
+     # - 1883:1883 # Add this for MQTT
     secrets:
       - cf-token # the secret at the top of this file
     env_file:
