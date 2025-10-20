@@ -1,0 +1,20 @@
+services:
+  authentik_proxy:
+    image: ghcr.io/goauthentik/proxy:2025.8.3
+    container_name: authentik_proxy
+    restart: unless-stopped
+    # Optionally specify which networks the container should be
+    # might be needed to reach the core authentik server
+    networks:
+      - proxy
+    ports:
+      - 9000:9000
+      - 9443:9443
+    env_file:
+      - secrets.env
+    environment:
+      AUTHENTIK_HOST: https://auth.${DOMAIN}
+      AUTHENTIK_INSECURE: "false"
+networks:
+  proxy:
+    external: true
