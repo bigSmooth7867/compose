@@ -3,9 +3,9 @@ services:
     image: lscr.io/linuxserver/tvheadend:latest
     container_name: tvheadend
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
 #      - RUN_OPTS= #optional
     volumes:
       - ${DOCKER_DIR}/media-stack/tvheadend/data:/config
