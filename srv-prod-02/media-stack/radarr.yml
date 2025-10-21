@@ -9,7 +9,7 @@ services:
       - TZ=Etc/UTC
     volumes:
       - ${DOCKER_DIR}/media-stack/radarr/data:/config
-      - ${NFS_DIR}/tank/media/data/:/data 
+      - ${NFS_DIR}/tank/media/data:/data 
       # - /mnt:/mnt 
     # ports:
     #   - 7878:7878
