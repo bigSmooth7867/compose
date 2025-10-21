@@ -48,6 +48,7 @@ services:
     networks:
       - proxy
     labels:
+    #TRAEFIK
       - "traefik.enable=true"
       - "traefik.http.routers.home.entrypoints=http"
       - "traefik.http.routers.home.rule=Host(`home.${DOMAIN}`)"
