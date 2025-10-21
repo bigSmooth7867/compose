@@ -1,0 +1,86 @@
+services:
+  zurg:
+    image: ghcr.io/debridmediamanager/zurg-testing:latest    
+    container_name: zurg
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=info 
+    healthcheck:
+      test: curl -f localhost:9999/dav/version.txt || exit 1
+    ports:
+      - 9999:9999
+    volumes:
+      - ${DOCKER_DIR}/media-stack/zurg/scripts/plex_update.sh:/app/plex_update.sh
+      - ${DOCKER_DIR}/media-stack/zurg/config/config.yml:/app/config.yml
+      - ${DOCKER_DIR}/media-stack/zurg/zurgdata:/app/data
+    networks:
+      - proxy
+    security_opt:
+      - no-new-privileges:true
+
+  rclone:
+    image: rclone/rclone:latest
+    container_name: rclone
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+    volumes:
+      - /mnt/remote/realdebrid:/data:rshared # CHANGE /mnt/zurg WITH YOUR PREFERRED MOUNT PATH
+      - ${DOCKER_DIR}/media-stack/rclone/rclone.conf:/config/rclone/rclone.conf
+      - /mnt:/mnt
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    devices:
+      - /dev/fuse:/dev/fuse:rwm
+    depends_on:
+      zurg:
+        condition: service_healthy
+        restart: true
+    # depends_on:
+    #   - zurg
+    # command: "mount zurg: /data --allow-other --allow-non-empty --dir-cache-time 10s --vfs-cache-mode full --uid 1000 --gid 1000"
+    # command: "mount zurg:__all__ /mnt/zurg --allow-other --dir-cache-time 10s --vfs-cache-mode full --vfs-read-chunk-size 8M --vfs-read-chunk-size-limit 2G --buffer-size 16M --vfs-cache-max-age 150h --vfs-cache-max-size 20G --vfs-fast-fingerprint --uid 1000 --gid 1000"
+    # command: "mount zurg: /data --allow-other --dir-cache-time 10s --vfs-cache-mode full --vfs-read-chunk-size 8M --vfs-read-chunk-size-limit 2G --buffer-size 16M --vfs-cache-max-age 150h --vfs-cache-max-size 20G --vfs-fast-fingerprint --uid 1000 --gid 1000"
+    command: "mount zurg: /data --allow-other --dir-cache-time 10s --allow-non-empty --uid=1000 --gid=1000" 
+    networks:
+      - proxy
+
+#mounting ram disk
+#sudo mount -t tmpfs -o size=10G tmpfs /mnt/ramdisk
+
+#optimal settings for 16gb of ram file size up 24gb
+# rclone mount zurg: /data \
+#   --vfs-cache-mode full \
+#   --vfs-cache-dir /mnt/ramdisk \
+#   --vfs-cache-max-size 6G \
+#   --vfs-read-chunk-size 16M \
+#   --vfs-read-chunk-size-limit 2G \
+#   --vfs-cache-max-age 1h \
+#   --buffer-size 128M \
+#   --vfs-fast-fingerprint
+
+#optimal settings for 16gb of ram file size up 45gb
+# rclone mount zurg: /data \
+#   --vfs-cache-mode full \
+#   --vfs-cache-dir /mnt/ramdisk \
+#   --vfs-cache-max-size 6G \
+#   --vfs-read-chunk-size 64M \
+#   --vfs-read-chunk-size-limit 2G \
+#   --vfs-cache-max-age 1h \
+#   --buffer-size 256M \
+#   --vfs-fast-fingerprint
+
+#optimal settings for 32gb of ram file size up 45gb
+# rclone mount zurg: /data \
+#   --vfs-cache-mode full \
+#   --vfs-cache-dir /mnt/ramdisk \
+#   --vfs-cache-max-size 12G \
+#   --vfs-read-chunk-size 128M \
+#   --vfs-read-chunk-size-limit 4G \
+#   --vfs-cache-max-age 6h \
+#   --buffer-size 512M \
+#   --vfs-fast-fingerprint

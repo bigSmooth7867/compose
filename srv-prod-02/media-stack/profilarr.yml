@@ -1,0 +1,35 @@
+services:
+  profilarr:
+    image: santiagosayshey/profilarr:latest # Use :beta for early access to new features
+    container_name: profilarr
+    # ports:
+    #   - 6868:6868
+    volumes:
+      - ${DOCKER_DIR}/media-stack/profilarr/config:/config # Replace with your actual path
+    environment:
+      - TZ=${TZ} # Set your timezone
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.profilarr.entrypoints=http"
+      - "traefik.http.routers.profilarr.rule=Host(`profilarr.${DOMAIN}`)" 
+      - "traefik.http.middlewares.profilarr-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.profilarr.middlewares=profilarr-https-redirect"
+      - "traefik.http.routers.profilarr-secure.entrypoints=https"
+      - "traefik.http.routers.profilarr-secure.rule=Host(`profilarr.${DOMAIN}`)" 
+      - "traefik.http.routers.profilarr-secure.tls=true"
+      - "traefik.http.routers.profilarr-secure.service=profilarr"
+      - "traefik.http.services.profilarr.loadbalancer.server.port=6868" 
+#      - "traefik.http.services.profilarr.loadbalancer.server.scheme=https" #if OVER HTTPS
+#      - "traefik.http.routers.profilarr-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=profilarr
+      - homepage.icon=profilarr.png
+      - homepage.href=https://profilarr.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,41 @@
+services:
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+#    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Etc/UTC
+    volumes:
+      - ${DOCKER_DIR}/media-stack/sabnzbd/config:/config
+      - ${NFS_DIR}/tank/media/data/usenet/:/data/usenet/ 
+    # ports:
+    #   - 8080:8080
+    # depends_on:
+    #   - gluetun
+    restart: unless-stopped
+    networks:
+      # - arrnet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.sabnzbd.entrypoints=http"
+      - "traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.sabnzbd-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.sabnzbd.middlewares=sabnzbd-https-redirect"
+      - "traefik.http.routers.sabnzbd-secure.entrypoints=https"
+      - "traefik.http.routers.sabnzbd-secure.rule=Host(`sabnzbd.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.sabnzbd-secure.tls=true"
+      - "traefik.http.routers.sabnzbd-secure.service=sabnzbd"
+      - "traefik.http.services.sabnzbd.loadbalancer.server.port=8080" #port
+      - "traefik.http.routers.sabnzbd-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=sabnzbd
+      - homepage.icon=sabnzbd.png
+      - homepage.href=https://sabnzbd.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true     

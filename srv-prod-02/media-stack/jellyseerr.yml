@@ -1,0 +1,44 @@
+services:
+  jellyseerr:
+    # image: fallenbagel/jellyseerr:preview-OIDC
+    image: fallenbagel/jellyseerr:latest
+
+    container_name: jellyseerr
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=${TZ}
+      - PORT=5055 #optional
+    # ports:
+    #   - 5055:5055
+    volumes:
+      - ${DOCKER_DIR}/media-stack/jellyseerr/config:/app/config
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.request.entrypoints=http"
+      - "traefik.http.routers.request.rule=Host(`request.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.request-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.request.middlewares=request-https-redirect"
+      - "traefik.http.routers.request-secure.entrypoints=https"
+      - "traefik.http.routers.request-secure.rule=Host(`request.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.request-secure.tls=true"
+      - "traefik.http.routers.request-secure.service=request"
+      - "traefik.http.services.request.loadbalancer.server.port=5055" #port
+#      - "traefik.http.routers.request-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=jellyseerr
+      - homepage.icon=jellyseerr.png
+      - homepage.href=https://request.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

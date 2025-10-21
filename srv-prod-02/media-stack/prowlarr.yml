@@ -1,0 +1,40 @@
+services:
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    # network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Etc/UTC
+    volumes:
+      - ${DOCKER_DIR}/media-stack/prowlarr:/config
+      # - ${DOCKER_DIR}/media-stack/prowlarr/custom:/config/Definitions/Custom
+    restart: unless-stopped
+    # depends_on:
+    #   - gluetun
+    networks:
+      # - arrnet
+      - proxy
+#      - service:gluetun
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.entrypoints=http"
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.prowlarr-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.prowlarr.middlewares=prowlarr-https-redirect"
+      - "traefik.http.routers.prowlarr-secure.entrypoints=https"
+      - "traefik.http.routers.prowlarr-secure.rule=Host(`prowlarr.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.prowlarr-secure.tls=true"
+      - "traefik.http.routers.prowlarr-secure.service=prowlarr"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696" #port
+      - "traefik.http.routers.prowlarr-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=prowlarr
+      - homepage.icon=prowlarr.png
+      - homepage.href=https://prowlarr.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

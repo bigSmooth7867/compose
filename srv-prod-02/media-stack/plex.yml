@@ -1,0 +1,113 @@
+services:
+  pms-docker:
+    container_name: plex
+    image: lscr.io/linuxserver/plex:latest #based on Ubuntu
+    restart: unless-stopped
+    devices:
+      - /dev/dri:/dev/dri
+    volumes:
+      - '${DOCKER_DIR}/media-stack/plex/config:/config'
+      - "${DOCKER_RESOURCES}/plex/Metadata:/config/Library/Application Support/Plex Media Server/Metadata"
+      - '/mnt:/mnt:ro'
+      - '${NFS_DIR}/tank/media/data/media:/data/media:ro'
+      - '${NFS_DIR}/tank/media/data/media/dvr/plex_dvr:/dvr'
+    tmpfs:
+      - /transcode:size=6G
+    ports:
+      - 32400:32400 #/tcp # only port that is strictly required
+      # - 32400:32400/udp
+      # - 3005:3005/tcp #????
+      # - 8324:8324/tcp # Plex for Roku via Plex Companion
+      # - 32469:32469/tcp # Plex DLNA Server
+      # - 1900:1900/udp  # Plex DLNA Server
+      - 32410:32410/udp # GDM network discovery
+      - 32412:32412/udp # GDM network discovery
+      - 32413:32413/udp # GDM network discovery
+      - 32414:32414/udp # GDM network discovery
+#      - 32469:32469 # Plex DLNA Server
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - VERSION=docker
+      - TZ=${TZ}
+      - ADVERTISE_IP=https://plex.${DOMAIN}:443 #change me
+      - ALLOWED_NETWORKS=192.168.0.0/16 # place trusted network ranges here
+    depends_on:
+      - rclone
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      # Internal HTTP router
+      - "traefik.http.routers.plex-internal.entrypoints=http"
+      - "traefik.http.routers.plex-internal.rule=Host(`plex.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.plex-internal.middlewares=plex-https-redirect"
+      # External HTTP router
+      - "traefik.http.routers.plex-external.entrypoints=http-external"
+      - "traefik.http.routers.plex-external.rule=Host(`plex.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.plex-external.middlewares=plex-https-redirect"
+      # Internal HTTPS router
+      - "traefik.http.routers.plex-secure-internal.entrypoints=https"
+      - "traefik.http.routers.plex-secure-internal.rule=Host(`plex.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.plex-secure-internal.tls=true"
+      - "traefik.http.routers.plex-secure-internal.service=plex"
+      # External HTTPS router
+      - "traefik.http.routers.plex-secure-external.entrypoints=https-external"
+      - "traefik.http.routers.plex-secure-external.rule=Host(`plex.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.plex-secure-external.tls=true"
+      - "traefik.http.routers.plex-secure-external.service=plex"
+      # Service Configuration
+      - "traefik.http.services.plex.loadbalancer.server.port=32400" #port
+      - "traefik.http.services.plex.loadbalancer.server.scheme=https"
+      # Middleware for HTTPS redirection
+      - "traefik.http.middlewares.plex-https-redirect.redirectscheme.scheme=https"  
+      # Authentik middleware (if intended for plex service)
+#      - "traefik.http.routers.plex-secure-internal.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+#      - "traefik.http.routers.plex-secure-external.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      # Network 
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=plex
+      - homepage.icon=plex.png
+      - homepage.href=https://plex.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+####PLEX Image Clean UP####
+  # imagemaid:
+  #   image: kometateam/imagemaid
+  #   container_name: imagemaid
+  #   environment:
+  #     - TZ=America/New_York #optional
+  #   volumes:
+  #     - ${DOCKER_DIR}/media-stack/imagemaid/config:/config #imagemaid Config Folder
+  #     - ${DOCKER_DIR}/media-stack/plex/config/Library/Application Support/Plex Media Server:/plex #Plex Folder
+  #   restart: unless-stopped
+  #   networks:
+  #     - iptvnet
+
+  kometa:
+    image: lscr.io/linuxserver/kometa:latest
+    container_name: kometa
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ} #optional
+      - KOMETA_CONFIG=/config/config.yml #optional
+      - KOMETA_TIME=07:00 #optional
+      - KOMETA_RUN=False #optional
+      - KOMETA_TEST=False #optional
+      - KOMETA_NO_MISSING=False #optional
+    volumes:
+      - ${DOCKER_DIR}/media-stack/kometa/config:/config
+    restart: unless-stopped
+    networks:
+      - proxy
+    security_opt:
+      - no-new-privileges:true
+
+
+
+

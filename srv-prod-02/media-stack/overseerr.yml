@@ -1,0 +1,55 @@
+services:
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${DOCKER_DIR}/media-stack/overseerr/config:/config
+    depends_on:
+      - pms-docker
+    # ports:
+    #   - 5055:5055
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      ## Internal HTTP router
+      - "traefik.http.routers.request-internal.entrypoints=http"
+      - "traefik.http.routers.request-internal.rule=Host(`request.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.request-internal.middlewares=request-https-redirect"
+      ## External HTTP router
+      - "traefik.http.routers.request-external.entrypoints=http-external"
+      - "traefik.http.routers.request-external.rule=Host(`request.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.request-external.middlewares=request-https-redirect"
+      ## Internal HTTPS router
+      - "traefik.http.routers.request-secure-internal.entrypoints=https"
+      - "traefik.http.routers.request-secure-internal.rule=Host(`request.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.request-secure-internal.tls=true"
+      - "traefik.http.routers.request-secure-internal.service=request"
+      ## External HTTPS router
+      - "traefik.http.routers.request-secure-external.entrypoints=https-external"
+      - "traefik.http.routers.request-secure-external.rule=Host(`request.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.request-secure-external.tls=true"
+      - "traefik.http.routers.request-secure-external.service=request"
+      ## Service Configuration
+      - "traefik.http.services.request.loadbalancer.server.port=5055" #port
+#      - "traefik.http.services.request.loadbalancer.server.scheme=https" #if OVER HTTPS
+      ## Middleware for HTTPS redirection
+      - "traefik.http.middlewares.request-https-redirect.redirectscheme.scheme=https"  
+      ## Authentik middleware (if intended for request service)
+#      - "traefik.http.routers.request-secure-internal.middlewares=middlewares-authentik@file" #INTERNAL add this to any container you want to use the Authentik web proxy
+#      - "traefik.http.routers.request-secure-external.middlewares=middlewares-authentik@file" #EXTERNAL add this to any container you want to use the Authentik web proxy
+      # Network 
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=overseerr
+      - homepage.icon=overseerr.png
+      - homepage.href=https://request.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

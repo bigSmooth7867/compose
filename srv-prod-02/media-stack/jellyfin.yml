@@ -1,0 +1,70 @@
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    group_add:
+     - '992'  # This needs to be the group id of running `stat -c '%g' /dev/dri/renderD128` on the docker host
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - JELLYFIN_PublishedServerUrl=https://jellyfin.${DOMAIN}
+      - DOCKER_MODS=linuxserver/mods:jellyfin-opencl-intel
+    volumes:
+      - ${DOCKER_DIR}/media-stack/jellyfin/library:/config ####CHANGE ME
+      - ${DOCKER_RESOURCES}/jellyfin/metadata:/metadata
+      - /mnt:/mnt:ro
+      - ${NFS_DIR}/tank/media/data/media:/data/media:ro
+      - ${NFS_DIR}/tank/media/data/media/dvr/jellyfin_dvr:/dvr
+    tmpfs:
+      - /transcode:size=6G
+    # ports:
+    #   - 8096:8096 #Http webUI
+    #   - 8920:8920 #Https webUI (you need to set up your own certificate).
+    #   - 7359:7359/udp # GDM network discovery
+    #   - 1900:1900/udp # DLNA Server also used by plex
+    restart: unless-stopped
+    depends_on:
+      - rclone
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      ## Internal HTTP router
+      - "traefik.http.routers.jellyfin-internal.entrypoints=http"
+      - "traefik.http.routers.jellyfin-internal.rule=Host(`jellyfin.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.jellyfin-internal.middlewares=jellyfin-https-redirect"
+      ## External HTTP router
+      - "traefik.http.routers.jellyfin-external.entrypoints=http-external"
+      - "traefik.http.routers.jellyfin-external.rule=Host(`jellyfin.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.jellyfin-external.middlewares=jellyfin-https-redirect"
+      ## Internal HTTPS router
+      - "traefik.http.routers.jellyfin-secure-internal.entrypoints=https"
+      - "traefik.http.routers.jellyfin-secure-internal.rule=Host(`jellyfin.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.jellyfin-secure-internal.tls=true"
+      - "traefik.http.routers.jellyfin-secure-internal.service=jellyfin"
+      ## External HTTPS router
+      - "traefik.http.routers.jellyfin-secure-external.entrypoints=https-external"
+      - "traefik.http.routers.jellyfin-secure-external.rule=Host(`jellyfin.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.jellyfin-secure-external.tls=true"
+      - "traefik.http.routers.jellyfin-secure-external.service=jellyfin"
+      ## Service Configuration
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096" #port
+#      - "traefik.http.services.jellyfin.loadbalancer.server.scheme=https" #if OVER HTTPS
+      ## Middleware for HTTPS redirection
+      - "traefik.http.middlewares.jellyfin-https-redirect.redirectscheme.scheme=https"  
+      ## Authentik middleware (if intended for jellyfin service)
+#      - "traefik.http.routers.jellyfin-secure-internal.middlewares=middlewares-authentik@file" #INTERNAL add this to any container you want to use the Authentik web proxy
+#      - "traefik.http.routers.jellyfin-secure-external.middlewares=middlewares-authentik@file" #EXTERNAL add this to any container you want to use the Authentik web proxy
+      # Network 
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=jellyfin
+      - homepage.icon=jellyfin.png
+      - homepage.href=https://jellyfin.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,42 @@
+services:
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+#    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Etc/UTC
+    volumes:
+      - ${DOCKER_DIR}/media-stack/sonarr/data:/config
+      - ${NFS_DIR}/tank/media/data/:/data
+      # - /mnt:/mnt 
+    # ports:
+    #   - 8989:8989 
+    restart: unless-stopped
+    # depends_on:
+    #   - gluetun
+    networks:
+      # - arrnet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.entrypoints=http"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.sonarr-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.sonarr.middlewares=sonarr-https-redirect"
+      - "traefik.http.routers.sonarr-secure.entrypoints=https"
+      - "traefik.http.routers.sonarr-secure.rule=Host(`sonarr.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.sonarr-secure.tls=true"
+      - "traefik.http.routers.sonarr-secure.service=sonarr"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989" #port
+      - "traefik.http.routers.sonarr-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=sonarr
+      - homepage.icon=sonarr.png
+      - homepage.href=https://sonarr.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

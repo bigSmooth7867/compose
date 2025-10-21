@@ -1,0 +1,29 @@
+include:
+ - ${COMPOSE_DIR}/media-stack/iptv.yml
+ - ${COMPOSE_DIR}/media-stack/jellyfin.yml
+ - ${COMPOSE_DIR}/media-stack/jellyseerr.yml
+ - ${COMPOSE_DIR}/media-stack/plex.yml
+ - ${COMPOSE_DIR}/media-stack/prowlarr.yml
+ - ${COMPOSE_DIR}/media-stack/radarr.yml
+ - ${COMPOSE_DIR}/media-stack/sonarr.yml
+ - ${COMPOSE_DIR}/media-stack/bazarr.yml
+ - ${COMPOSE_DIR}/media-stack/sabnzbd.yml
+ - ${COMPOSE_DIR}/media-stack/tvapp2.yml
+ - ${COMPOSE_DIR}/media-stack/wizarr.yml
+ - ${COMPOSE_DIR}/media-stack/zurg.yml
+ - ${COMPOSE_DIR}/media-stack/profilarr.yml
+#  - ${COMPOSE_DIR}/media-stack/m3u-editor.yml
+#  - ${COMPOSE_DIR}/media-stack/mediaflow-proxy.yml
+#  - ${COMPOSE_DIR}/media-stack/overseerr.yml
+
+
+networks:
+  # iptvnet:
+  #   name: iptvnet
+  #   driver: bridge
+  #   ipam:
+  #     config:
+  #       - subnet: 172.36.0.0/16
+  #         gateway: 172.36.0.1 
+  proxy:
+     external: true

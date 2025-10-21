@@ -1,0 +1,40 @@
+services:
+  cinesync:
+    image: sureshfizzy/cinesync:latest
+    container_name: cinesync
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+    ports:
+      - "8082:8082" #API server and WebDAV 
+      # - "5173:5173" #Web interface 
+    volumes:
+      - /home:/home  # Mount home directory to provide access to home files
+      - /mnt:/mnt  # Mount /mnt for access to external storage
+      - ${DOCKER_DIR}/media-stack/cinesync/db:/app/db  # Mount local db folder to persist database files
+      - ${DOCKER_DIR}/media-stack/cinesync/config/.env:/app/.env 
+    networks:
+      - hassionet
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.cinesync.entrypoints=http"
+      - "traefik.http.routers.cinesync.rule=Host(`cinesync.${DOMAIN}`)" #Dom4in
+      - "traefik.http.middlewares.cinesync-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.cinesync.middlewares=cinesync-https-redirect"
+      - "traefik.http.routers.cinesync-secure.entrypoints=https"
+      - "traefik.http.routers.cinesync-secure.rule=Host(`cinesync.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.cinesync-secure.tls=true"
+      - "traefik.http.routers.cinesync-secure.service=cinesync"
+      - "traefik.http.services.cinesync.loadbalancer.server.port=5173" #port
+#      - "traefik.http.services.cinesync.loadbalancer.server.scheme=https" #if OVER HTTPS
+#      - "traefik.http.routers.cinesync-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=cinesync
+      - homepage.icon=cinesync.png
+      - homepage.href=http://cinesync.${DOMAIN}
+      # - homepage.description=Media server

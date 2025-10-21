@@ -1,0 +1,100 @@
+services:
+  tvheadend:
+    image: lscr.io/linuxserver/tvheadend:latest
+    container_name: tvheadend
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+#      - RUN_OPTS= #optional
+    volumes:
+      - ${DOCKER_DIR}/media-stack/tvheadend/data:/config
+      - ${NFS_DIR}/tank/media/data/media/dvr/tvheadend_dvr:/recordings
+      - ${DOCKER_DIR}/media-stack/tvheadend/custom_scripts/custom-cont-init.d:/custom-cont-init.d #Custom Scripts
+#      - ${DOCKER_DIR}/media-stack/tvheadend/custom_scripts:/custom-cont-init.d #Custom Scripts
+#      - /path/to/icons:/icons #icons
+    ports:
+      # - 9981:9981 #WebUI
+      - 9982:9982 #HTSP server port
+    devices:
+      - /dev/dri:/dev/dri #optional Only needed if you want to use your AMD/Intel GPU for hardware accelerated video encoding (vaapi).
+    #   - /dev/dvb:/dev/dvb #optional Only needed if you want to pass through a DVB card to the container. If you use IPTV or HDHomeRun you can leave it out.
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.tv.entrypoints=http"
+      - "traefik.http.routers.tv.rule=Host(`tv.${DOMAIN}`)" 
+      - "traefik.http.middlewares.tv-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.tv.middlewares=tv-https-redirect"
+      - "traefik.http.routers.tv-secure.entrypoints=https"
+      - "traefik.http.routers.tv-secure.rule=Host(`tv.${DOMAIN}`)" 
+      - "traefik.http.routers.tv-secure.tls=true"
+      - "traefik.http.routers.tv-secure.service=tv"
+      - "traefik.http.services.tv.loadbalancer.server.port=9981" #port
+#      - "traefik.http.routers.tv-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=tvheadend
+      - homepage.icon=tvheadend.png
+      - homepage.href=https://tv.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+  zap2xml:
+    container_name: zap2xml
+    image: ghcr.io/jef/zap2xml:latest
+    environment:
+      OUTPUT_FILE: /xmltv/guide.xml
+      LINEUP_ID: USA-FL09477-L
+    volumes:
+      - ${DOCKER_DIR}/media-stack/tvheadend/data/data/:/xmltv
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  cabernet:
+    container_name: cabernet
+    image: ghcr.io/cabernetwork/cabernet:latest
+    environment:
+      - TZ=${TZ} # Timezone (Optional)
+      - PUID=1000   # UserID (Optional)
+      - PGID=1000    # GroupID (Optional)
+    ports:
+      - 6077:6077    # Web Interface Port
+    #   - 5005:5004   # Port used to stream
+    #   - 1900:1900   #optional SSDP
+    #   - 65001:65001 #optional HDHomerun
+    restart: unless-stopped
+    volumes:
+      - ${DOCKER_DIR}/media-stack/cabernet/data:/app/data                # App data (Optional)
+      - ${DOCKER_DIR}/media-stack/cabernet/plugins_ext:/app/plugins_ext  # Plugins Data (Optional)
+      - ${DOCKER_DIR}/media-stack/cabernet/secrets:/app/.cabernet
+    networks:
+      - proxy
+    # networks:
+    #   iptvnet:
+    #     ipv4_address: 172.49.0.10  # Assign a static IP from iptvnet
+    #   proxy: 
+    # labels:
+    #TRAEFIK
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.cabernet.entrypoints=http"
+    #   - "traefik.http.routers.cabernet.rule=Host(`cabernet.${DOMAIN}`)" #Domain
+    #   - "traefik.http.middlewares.cabernet-https-redirect.redirectscheme.scheme=https"
+    #   - "traefik.http.routers.cabernet.middlewares=cabernet-https-redirect"
+    #   - "traefik.http.routers.cabernet-secure.entrypoints=https"
+    #   - "traefik.http.routers.cabernet-secure.rule=Host(`cabernet.${DOMAIN}`)" #Domain
+    #   - "traefik.http.routers.cabernet-secure.tls=true"
+    #   - "traefik.http.routers.cabernet-secure.service=cabernet"
+    #   - "traefik.http.services.cabernet.loadbalancer.server.port=6077" #port
+    #   - "traefik.http.routers.cabernet-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+    #   - "traefik.docker.network=proxy"
+    security_opt:
+      - no-new-privileges:true
+
+
+

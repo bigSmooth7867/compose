@@ -1,0 +1,57 @@
+---
+services:
+  wizarr:
+    container_name: wizarr
+    image: ghcr.io/wizarrrr/wizarr
+    restart: unless-stopped
+    # ports:
+    #   - 5690:5690
+    volumes:
+      - ${DOCKER_DIR}/media-stack/wizarr/config/database:/data/database
+      # - ${DOCKER_DIR}/media-stack/wizarr/config/wizard:/data/wizard_steps
+    environment:
+      - PUID=${PUID} 
+      - PGID=${PGID}
+      - DISABLE_BUILTIN_AUTH=true #Set to true ONLY if you are using another auth provider (Authelia, Authentik, etc)
+      - TZ=${TZ}
+      - APP_URL=https://invite.${DOMAIN} 
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      ## Internal HTTP router
+      - "traefik.http.routers.invite-internal.entrypoints=http"
+      - "traefik.http.routers.invite-internal.rule=Host(`invite.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.invite-internal.middlewares=invite-https-redirect"
+      ## External HTTP router
+      - "traefik.http.routers.invite-external.entrypoints=http-external"
+      - "traefik.http.routers.invite-external.rule=Host(`invite.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.invite-external.middlewares=invite-https-redirect"
+      ## Internal HTTPS router
+      - "traefik.http.routers.invite-secure-internal.entrypoints=https"
+      - "traefik.http.routers.invite-secure-internal.rule=Host(`invite.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.invite-secure-internal.tls=true"
+      - "traefik.http.routers.invite-secure-internal.service=invite"
+      ## External HTTPS router
+      - "traefik.http.routers.invite-secure-external.entrypoints=https-external"
+      - "traefik.http.routers.invite-secure-external.rule=Host(`invite.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.invite-secure-external.tls=true"
+      - "traefik.http.routers.invite-secure-external.service=invite"
+      ## Service Configuration
+      - "traefik.http.services.invite.loadbalancer.server.port=5690" #port
+#      - "traefik.http.services.invite.loadbalancer.server.scheme=https" #if OVER HTTPS
+      ## Middleware for HTTPS redirection
+      - "traefik.http.middlewares.invite-https-redirect.redirectscheme.scheme=https"  
+      ## Authentik middleware (if intended for wizarr service)
+      - "traefik.http.routers.invite-secure-internal.middlewares=middlewares-authentik@file" #INTERNAL add this to any container you want to use the Authentik web proxy
+      - "traefik.http.routers.invite-secure-external.middlewares=middlewares-authentik@file" #EXTERNAL add this to any container you want to use the Authentik web proxy
+      # Network 
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=wizarr
+      - homepage.icon=wizarr.png
+      - homepage.href=https://invite.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
