@@ -10,7 +10,7 @@ include:
  - ${COMPOSE_DIR}/media-stack/sabnzbd.yml
  - ${COMPOSE_DIR}/media-stack/tvapp2.yml
  - ${COMPOSE_DIR}/media-stack/wizarr.yml
- - ${COMPOSE_DIR}/media-stack/zurg.yml
+#  - ${COMPOSE_DIR}/media-stack/zurg.yml
  - ${COMPOSE_DIR}/media-stack/profilarr.yml
 #  - ${COMPOSE_DIR}/media-stack/m3u-editor.yml
 #  - ${COMPOSE_DIR}/media-stack/mediaflow-proxy.yml

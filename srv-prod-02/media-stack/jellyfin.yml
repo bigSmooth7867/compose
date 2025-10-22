@@ -26,8 +26,8 @@ services:
     #   - 7359:7359/udp # GDM network discovery
     #   - 1900:1900/udp # DLNA Server also used by plex
     restart: unless-stopped
-    depends_on:
-      - rclone
+    # depends_on:
+    #   - rclone
     networks:
       - proxy
     labels:

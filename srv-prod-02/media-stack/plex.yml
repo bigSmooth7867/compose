@@ -32,8 +32,8 @@ services:
       - TZ=${TZ}
       - ADVERTISE_IP=https://plex.${DOMAIN}:443 #change me
       - ALLOWED_NETWORKS=192.168.0.0/16 # place trusted network ranges here
-    depends_on:
-      - rclone
+    # depends_on:
+    #   - rclone
     networks:
       - proxy
     labels:
