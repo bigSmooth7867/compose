@@ -10,7 +10,7 @@ include:
  - ${COMPOSE_DIR}/home-automation/hyperhdr.yml
  - ${COMPOSE_DIR}/home-automation/go2rtc.yml
  - ${COMPOSE_DIR}/home-automation/music-assistant.yml
-
+ - ${COMPOSE_DIR}/home-automation/maptiler.yml
 networks:
   hassionet:
     name: hassionet
