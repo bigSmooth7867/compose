@@ -8,20 +8,21 @@ services:
     networks:
       - proxy
     labels:
+    #TRAEFIK
       - "traefik.enable=true"
       - "traefik.http.routers.music-remover.entrypoints=http"
-      - "traefik.http.routers.music-remover.rule=Host(`music-remover.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.music-remover.rule=Host(`music-remover.${DOMAIN}`)"
       - "traefik.http.middlewares.music-remover-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.music-remover.middlewares=music-remover-https-redirect"
       - "traefik.http.routers.music-remover-secure.entrypoints=https"
-      - "traefik.http.routers.music-remover-secure.rule=Host(`music-remover.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.music-remover-secure.rule=Host(`music-remover.${DOMAIN}`)
       - "traefik.http.routers.music-remover-secure.tls=true"
       - "traefik.http.routers.music-remover-secure.service=music-remover"
-      - "traefik.http.services.music-remover.loadbalancer.server.port=8080" #port
+      - "traefik.http.services.music-remover.loadbalancer.server.port=8080"
 #      - "traefik.http.services.music-remover.loadbalancer.server.scheme=https" #if OVER HTTPS
 #      - "traefik.http.routers.music-remover-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"
-    #homepage
+    #HOMEPAGE
       - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=music-remover
       - homepage.icon=music-remover.png

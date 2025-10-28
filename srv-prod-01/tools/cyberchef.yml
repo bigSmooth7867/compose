@@ -8,19 +8,20 @@ services:
     networks:
       - proxy
     labels:
+    #TRAEFIK
       - "traefik.enable=true"
       - "traefik.http.routers.cyberchef.entrypoints=http"
-      - "traefik.http.routers.cyberchef.rule=Host(`cyberchef.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.cyberchef.rule=Host(`cyberchef.${DOMAIN}`)"
       - "traefik.http.middlewares.cyberchef-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.cyberchef.middlewares=cyberchef-https-redirect"
       - "traefik.http.routers.cyberchef-secure.entrypoints=https"
-      - "traefik.http.routers.cyberchef-secure.rule=Host(`cyberchef.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.cyberchef-secure.rule=Host(`cyberchef.${DOMAIN}`)"
       - "traefik.http.routers.cyberchef-secure.tls=true"
       - "traefik.http.routers.cyberchef-secure.service=cyberchef"
-      - "traefik.http.services.cyberchef.loadbalancer.server.port=80" #port
+      - "traefik.http.services.cyberchef.loadbalancer.server.port=80"
 #      - "traefik.http.routers.cyberchef-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"
-    #homepage
+    #HOMEPAGE
       - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=cyberchef
       - homepage.icon=cyberchef.png

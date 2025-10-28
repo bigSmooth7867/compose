@@ -17,19 +17,20 @@ services:
     networks:
       proxy:
     labels:
+    #TRAEFIK
       - "traefik.enable=true"
       - "traefik.http.routers.pdf.entrypoints=http"
-      - "traefik.http.routers.pdf.rule=Host(`pdf.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.pdf.rule=Host(`pdf.${DOMAIN}`)"
       - "traefik.http.middlewares.pdf-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.pdf.middlewares=pdf-https-redirect"
       - "traefik.http.routers.pdf-secure.entrypoints=https"
-      - "traefik.http.routers.pdf-secure.rule=Host(`pdf.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.pdf-secure.rule=Host(`pdf.${DOMAIN}`)"
       - "traefik.http.routers.pdf-secure.tls=true"
       - "traefik.http.routers.pdf-secure.service=pdf"
-      - "traefik.http.services.pdf.loadbalancer.server.port=8080" #port
+      - "traefik.http.services.pdf.loadbalancer.server.port=8080"
 #      - "traefik.http.routers.pdf-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"
-    #homepage
+    #HOMEPAGE
       - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=stirling-pdf
       - homepage.icon=stirling-pdf.png

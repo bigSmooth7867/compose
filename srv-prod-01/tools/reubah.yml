@@ -13,16 +13,17 @@ services:
     networks:
       - proxy
     labels:
+    #TRAEFIK
       - "traefik.enable=true"
       - "traefik.http.routers.reubah.entrypoints=http"
-      - "traefik.http.routers.reubah.rule=Host(`reubah.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.reubah.rule=Host(`reubah.${DOMAIN}`)"
       - "traefik.http.middlewares.reubah-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.reubah.middlewares=reubah-https-redirect"
       - "traefik.http.routers.reubah-secure.entrypoints=https"
-      - "traefik.http.routers.reubah-secure.rule=Host(`reubah.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.reubah-secure.rule=Host(`reubah.${DOMAIN}`)"
       - "traefik.http.routers.reubah-secure.tls=true"
       - "traefik.http.routers.reubah-secure.service=reubah"
-      - "traefik.http.services.reubah.loadbalancer.server.port=8081" #port
+      - "traefik.http.services.reubah.loadbalancer.server.port=8081"
 #      - "traefik.http.services.reubah.loadbalancer.server.scheme=https" #if OVER HTTPS
 #      - "traefik.http.routers.reubah-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"

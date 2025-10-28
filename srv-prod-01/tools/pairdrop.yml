@@ -16,19 +16,20 @@ services:
     networks:
       proxy:
     labels:
+    #TRAEFIK
       - "traefik.enable=true"
       - "traefik.http.routers.drop.entrypoints=http"
-      - "traefik.http.routers.drop.rule=Host(`drop.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.drop.rule=Host(`drop.${DOMAIN}`)"
       - "traefik.http.middlewares.drop-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.drop.middlewares=drop-https-redirect"
       - "traefik.http.routers.drop-secure.entrypoints=https"
-      - "traefik.http.routers.drop-secure.rule=Host(`drop.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.drop-secure.rule=Host(`drop.${DOMAIN}`)"
       - "traefik.http.routers.drop-secure.tls=true"
       - "traefik.http.routers.drop-secure.service=drop"
       - "traefik.http.services.drop.loadbalancer.server.port=3000" #port
 #      - "traefik.http.routers.drop-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"
-    #homepage
+    #HOMEPAGE
       - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=pairdrop
       - homepage.icon=pairdrop.png

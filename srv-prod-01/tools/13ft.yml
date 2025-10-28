@@ -11,18 +11,18 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.13ft.entrypoints=http"
-      - "traefik.http.routers.13ft.rule=Host(`13ft.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.13ft.rule=Host(`13ft.${DOMAIN}`)"
       - "traefik.http.middlewares.13ft-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.13ft.middlewares=13ft-https-redirect"
       - "traefik.http.routers.13ft-secure.entrypoints=https"
-      - "traefik.http.routers.13ft-secure.rule=Host(`13ft.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.13ft-secure.rule=Host(`13ft.${DOMAIN}`)"
       - "traefik.http.routers.13ft-secure.tls=true"
       - "traefik.http.routers.13ft-secure.service=13ft"
-      - "traefik.http.services.13ft.loadbalancer.server.port=5000" #port
+      - "traefik.http.services.13ft.loadbalancer.server.port=5000"
 #      - "traefik.http.services.13ft.loadbalancer.server.scheme=https" #if OVER HTTPS
 #      - "traefik.http.routers.13ft-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"
-    #homepage
+    #HOMEPAGE
       - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=13ft
       - homepage.icon=13ft.png

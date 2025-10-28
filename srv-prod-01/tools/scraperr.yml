@@ -12,20 +12,21 @@ services:
     networks:
       - proxy
     labels:
+    #TRAEFIK
       - "traefik.enable=true"
       - "traefik.http.routers.scraperr.entrypoints=http"
-      - "traefik.http.routers.scraperr.rule=Host(`scraperr.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.scraperr.rule=Host(`scraperr.${DOMAIN}`)"
       - "traefik.http.middlewares.scraperr-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.scraperr.middlewares=scraperr-https-redirect"
       - "traefik.http.routers.scraperr-secure.entrypoints=https"
-      - "traefik.http.routers.scraperr-secure.rule=Host(`scraperr.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.scraperr-secure.rule=Host(`scraperr.${DOMAIN}`)"
       - "traefik.http.routers.scraperr-secure.tls=true"
       - "traefik.http.routers.scraperr-secure.service=scraperr"
-      - "traefik.http.services.scraperr.loadbalancer.server.port=3000" #port
+      - "traefik.http.services.scraperr.loadbalancer.server.port=3000"
 #      - "traefik.http.services.scraperr.loadbalancer.server.scheme=https" #if OVER HTTPS
 #      - "traefik.http.routers.scraperr-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
       - "traefik.docker.network=proxy"
-    #homepage
+    #HOMEPAGE
       - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=scraperr
       - homepage.icon=scraperr.png
