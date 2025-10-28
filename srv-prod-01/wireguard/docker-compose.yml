@@ -1,0 +1,47 @@
+services:
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy
+    container_name: wg-easy
+    restart: unless-stoppe
+    env_file:
+      - secrets.env
+    environment:
+      - WG_DEFAULT_DNS=192.168.50.1
+    volumes:
+      - ${DOCKER_DIR}/wireguard:/etc/wireguard
+    ports:
+      - "51820:51820/udp"
+#      - "51821:51821/tcp" WebGUId
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.wgeasy.entrypoints=http"
+      - "traefik.http.routers.wgeasy.rule=Host(`wgeasy.${DOMAIN}`)"
+      - "traefik.http.middlewares.wgeasy-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.wgeasy.middlewares=wgeasy-https-redirect"
+      - "traefik.http.routers.wgeasy-secure.entrypoints=https"
+      - "traefik.http.routers.wgeasy-secure.rule=Host(`wgeasy.${DOMAIN}`)" 
+      - "traefik.http.routers.wgeasy-secure.tls=true"
+      - "traefik.http.routers.wgeasy-secure.service=wgeasy"
+      - "traefik.http.services.wgeasy.loadbalancer.server.port=51821" 
+      - "traefik.http.routers.wgeasy-secure.middlewares=middlewares-authentik@file"
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=wg-easy
+      - homepage.icon=wireguard.png
+      - homepage.href=https://wgeasy.${DOMAIN}
+    # security_opt:
+    #   - no-new-privileges:true
+      
+networks:
+  proxy:
+    external: true
