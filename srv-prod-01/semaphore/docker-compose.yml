@@ -58,7 +58,7 @@ services:
       - "traefik.http.services.semaphore.loadbalancer.server.port=3000"
       - "traefik.docker.network=proxy"
     #HOMEPAGE
-      - homepage.group=${GROUP}
+      - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=semaphore
       - homepage.icon=semaphore.png
       - homepage.href=https://semaphore.${DOMAIN}
