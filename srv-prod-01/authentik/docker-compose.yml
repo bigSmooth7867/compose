@@ -34,7 +34,7 @@ services:
       - authentiknet
 
   server:
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.8.4}
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.10.0}
     container_name: authentik_server
     restart: unless-stopped
     command: server
@@ -79,7 +79,7 @@ services:
     #   - no-new-privileges:true
 
   worker:
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.8.4}
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.10.0}
     container_name: authentik_worker
     restart: unless-stopped
     command: worker
