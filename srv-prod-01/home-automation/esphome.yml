@@ -38,7 +38,7 @@ services:
     #homepage
       - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=esphome
-      - homepage.icon=/icons/esphome-dark.png
+      - homepage.icon=/icons/esphome-light.png
       - homepage.href=https://esphome.${DOMAIN}
     security_opt:
       - no-new-privileges:true
