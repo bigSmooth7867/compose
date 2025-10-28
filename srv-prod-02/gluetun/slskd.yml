@@ -27,7 +27,6 @@ services:
       - ${NFS_DIR}/ssdp1/media/audio/music/shared:/data3
       - ${NFS_DIR}/ssdp1/media/audio/downloaders/slskd/ebooks:/ebooks #ebooks
       # - ${NFS_DIR}/ssdp1/media/audio/downloaders/slskd/music:/music:rw
-      # - ${NFS_DIR}/ssdp1/media/audio/downloaders/slskd/ebook:/ebooks:rw
     depends_on:
       gluetun:
         condition: service_healthy
