@@ -1,0 +1,12 @@
+include:
+ - ${COMPOSE_DIR}/gluetun/gluetun.yml
+ - ${COMPOSE_DIR}/gluetun/jdownloader.yml
+ - ${COMPOSE_DIR}/gluetun/qbittorrent.yml
+ - ${COMPOSE_DIR}/gluetun/slskd.yml
+ - ${COMPOSE_DIR}/gluetun/pinchflat.yml
+ - ${COMPOSE_DIR}/gluetun/spotizerr.yml
+#  - ${COMPOSE_DIR}/gluetun/firefox.yml
+
+networks:
+  proxy:
+    external: true

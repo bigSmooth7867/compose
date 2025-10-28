@@ -1,0 +1,33 @@
+services:
+  pinchflat:
+    image: ghcr.io/kieraneglin/pinchflat:latest
+    container_name: pinchflat
+    network_mode: "service:gluetun"
+    restart: unless-stopped
+    env_file:
+      - secrets.env
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - BASIC_AUTH_USERNAME=admin
+      # - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD}
+    # ports:
+    #   - '8945:8945'
+    volumes:
+      - ${DOCKER_DIR}/downloader/pinchflat/config:/config
+      - ${NFS_DIR}/ssdp1/media/youtubedl/pinchflat/youtube:/downloads/youtube #youtube
+      - ${NFS_DIR}/ssdp1/media/audio/soundcloud/:/downloads/soundcloud #soundcloud
+      - ${NFS_DIR}/tank/media/data/media/music_videos:/downloads/music_videos #Music Videos
+    # networks:
+    #   - proxy
+    depends_on:
+      - gluetun
+    labels:
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=pinchflat
+      - homepage.icon=pinchflat.png
+      - homepage.href=https://pinchflat.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,30 @@
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbittorrent
+    restart: unless-stopped
+    network_mode: "service:gluetun"
+    # ports:
+    #   - 3636:3636
+    #   - 6881:6881
+    #   - 6881:6881/udp
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=3636
+      - TORRENTING_PORT=6881
+    volumes:
+      - ${DOCKER_DIR}/downloader/qbittorrent/config:/config
+      - ${NFS_DIR}/tank/media/data/torrents:/data/torrents
+    #   - ${NFSss_DIR}/ssdp1/media/data/torrents:/downloads_ssdp1
+    depends_on:
+      - gluetun
+    labels:
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=qbittorrent
+      - homepage.icon=qbittorrent.png
+      - homepage.href=https://torrent.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

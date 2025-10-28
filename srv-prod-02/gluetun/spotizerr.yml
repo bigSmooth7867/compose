@@ -1,0 +1,79 @@
+#https://lavaforge.org/spotizerr
+services:
+  spotizerr:
+    network_mode: "service:gluetun"  
+    image: cooldockerizer93/spotizerr
+    container_name: spotizerr-app
+    restart: unless-stopped
+    env_file:
+      - secrets.env
+    environment:
+      - PUID=${PUID}  # Replace with your desired user ID  | Remove both if you want to run as root (not recommended, might result in unreadable files)
+      - PGID=${PGID} # Replace with your desired group ID | The user must have write permissions in the volume mapped to /app/downloads
+      - UMASK=${UMASK} # Optional: Sets the default file permissions for newly created files within the container.
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_URL=redis://localhost:6379/0
+      - REDIS_BACKEND=redis://localhost:6379/0
+    #   - EXPLICIT_FILTER=false # Set to true to filter out explicit
+      # - SPOTIPY_CACHE_PATH=/app/cache/.cache  # Spotify token cache path
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - EXPLICIT_FILTER=false
+      - SKIP_SET_PERMISSIONS=false
+      - ENABLE_AUTH=false
+      # - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION_HOURS=720
+      - DEFAULT_ADMIN_USERNAME=admin
+      # - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
+      - DISABLE_REGISTRATION=true
+      # SSO Configuration  
+      - SSO_ENABLED=true
+      - SSO_BASE_REDIRECT_URI=http://127.0.0.1:7171/api/auth/sso/callback
+      - FRONTEND_URL=http://127.0.0.1:7171
+    depends_on:
+      - redis
+    # ports:
+    #   - 7171:7171
+    volumes:
+      - ${DOCKER_DIR}/downloader/spotizzer/data:/app/data
+      - ${NFS_DIR}/ssdp1/media/audio/downloaders/spotizerr/downloads:/app/downloads  # <-- Change this for your music library dir
+      # - ${DOCKER_DIR}/downloader/spotizzer/logs:/app/logs  # <-- Volume for persistent logs
+      - spotizzer-logs:/app/logs #NON-PERSISTENT STORAGE
+    labels:
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=spotizerr
+      - homepage.icon=spotify.png
+      - homepage.href=https://spotizerr.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:alpine
+    network_mode: "service:gluetun"
+    container_name: spotizerr-redis
+    restart: unless-stopped
+    # ports:
+    #   - 6379:6379
+    # env_file:
+    # - .env.spotizzer
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    # command: sh -c 'redis-server --requirepass "redis-spotizerr" --appendonly yes'
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  redis-data:
+    driver: local
+  spotizzer-logs: #CHANGE TO NON-PERSISTENT STORAGE
+    driver: local
+
+
+
+

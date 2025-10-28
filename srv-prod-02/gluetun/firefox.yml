@@ -1,0 +1,17 @@
+services:
+  firefox:
+    image: jlesage/firefox
+    container_name: firefox
+    restart: unless-stopped
+    environment:
+      - WEB_LISTENING_PORT=5801
+      - VNC_LISTENING_PORT=5901
+    volumes:
+      - "${DOCKER_DIR}/downloader/firefox:/config:rw"
+    depends_on:
+      - gluetun
+    network_mode: "service:gluetun"
+    # ports:
+    #   - "5700:5700"
+    # networks:
+    #   - proxy

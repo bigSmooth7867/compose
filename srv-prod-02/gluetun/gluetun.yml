@@ -1,0 +1,113 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    env_file:
+      - secrets.env
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      # - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - SERVER_HOSTNAMES=
+      - SERVER_COUNTRIES=United States
+      - TZ=${TZ}
+      - UPDATER_PERIOD=24h
+      - DNS_ADDRESS=10.2.0.1
+      - FIREWALL_OUTBOUND_SUBNETS=192.168.90.0/24
+    ports:
+      # - "5900-5905:5900-5905" #expose range of ports for vnc    
+      # JDownloader
+      # - 5800:5800/tcp #jdownloader gui
+      - 5900:5900/tcp #jdownloader vnc
+      - 3129:3129/tcp #myjdownloader online
+      # - 9666:9666 #jdownloader browser extention
+      # Firefox
+      # - "5801:5801" #jdownloader gui
+      - "5901:5901" #jdownloader vnc
+      # qbittorrent
+      # - 3636:3636 #WebUI
+      - 6881:6881 #tcp
+      # SLSKD
+      # - "5030:5030" #/tcp #HTTP
+      # - "5031:5031" #HTTPS
+      - "50300:50300" #Incoming Connections
+      # spotizerr
+      # - "7171:7171" #spotizerr webui
+      - "6379:6379" #spotizer redis
+    volumes:
+      - ${DOCKER_DIR}/gluetun:/gluetun
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+
+### === QBITTORRENT ===    
+      - "traefik.http.routers.qbittorrent-http.entrypoints=http"    
+      - "traefik.http.routers.qbittorrent-http.rule=Host(`torrent.${DOMAIN}`)"  
+      - "traefik.http.routers.qbittorrent-http.service=qbittorrent-service"  
+      - "traefik.http.middlewares.qbittorrent-https-redirect.redirectscheme.scheme=https"    
+      - "traefik.http.routers.qbittorrent-http.middlewares=qbittorrent-https-redirect"    
+      - "traefik.http.routers.qbittorrent-https.entrypoints=https"    
+      - "traefik.http.routers.qbittorrent-https.rule=Host(`torrent.${DOMAIN}`)"    
+      - "traefik.http.routers.qbittorrent-https.tls=true"    
+      - "traefik.http.routers.qbittorrent-https.service=qbittorrent-service"    
+      - "traefik.http.services.qbittorrent-service.loadbalancer.server.port=3636"    
+      - "traefik.http.routers.qbittorrent-https.middlewares=middlewares-authentik@file"    
+    
+    ### === PINCHFLAT ===    
+      - "traefik.http.routers.pinchflat-http.entrypoints=http"    
+      - "traefik.http.routers.pinchflat-http.rule=Host(`pinchflat.${DOMAIN}`)"  
+      - "traefik.http.routers.pinchflat-http.service=pinchflat-service"
+      - "traefik.http.middlewares.pinchflat-https-redirect.redirectscheme.scheme=https"    
+      - "traefik.http.routers.pinchflat-http.middlewares=pinchflat-https-redirect"    
+      - "traefik.http.routers.pinchflat-https.entrypoints=https"    
+      - "traefik.http.routers.pinchflat-https.rule=Host(`pinchflat.${DOMAIN}`)"    
+      - "traefik.http.routers.pinchflat-https.tls=true"    
+      - "traefik.http.routers.pinchflat-https.service=pinchflat-service"    
+      - "traefik.http.services.pinchflat-service.loadbalancer.server.port=8945"    
+      - "traefik.http.routers.pinchflat-https.middlewares=middlewares-authentik@file"    
+    
+    ### === SLSKD ===    
+      - "traefik.http.routers.slskd-http.entrypoints=http"    
+      - "traefik.http.routers.slskd-http.rule=Host(`slskd.${DOMAIN}`)"  
+      - "traefik.http.routers.slskd-http.service=slskd-service"
+      - "traefik.http.middlewares.slskd-https-redirect.redirectscheme.scheme=https"    
+      - "traefik.http.routers.slskd-http.middlewares=slskd-https-redirect"    
+      - "traefik.http.routers.slskd-https.entrypoints=https"    
+      - "traefik.http.routers.slskd-https.rule=Host(`slskd.${DOMAIN}`)"    
+      - "traefik.http.routers.slskd-https.tls=true"    
+      - "traefik.http.routers.slskd-https.service=slskd-service"    
+      - "traefik.http.services.slskd-service.loadbalancer.server.port=5030"    
+      - "traefik.http.routers.slskd-https.middlewares=middlewares-authentik@file"
+    
+    ### === SPOTIZERR ===    
+      - "traefik.http.routers.spotizerr-http.entrypoints=http"    
+      - "traefik.http.routers.spotizerr-http.rule=Host(`spotizerr.${DOMAIN}`)"  
+      - "traefik.http.routers.spotizerr-http.service=spotizerr-service" 
+      - "traefik.http.middlewares.spotizerr-https-redirect.redirectscheme.scheme=https"    
+      - "traefik.http.routers.spotizerr-http.middlewares=spotizerr-https-redirect"    
+      - "traefik.http.routers.spotizerr-https.entrypoints=https"    
+      - "traefik.http.routers.spotizerr-https.rule=Host(`spotizerr.${DOMAIN}`)"    
+      - "traefik.http.routers.spotizerr-https.tls=true"    
+      - "traefik.http.routers.spotizerr-https.service=spotizerr-service"    
+      - "traefik.http.services.spotizerr-service.loadbalancer.server.port=7171"    
+      - "traefik.http.routers.spotizerr-https.middlewares=middlewares-authentik@file"
+
+    ### === jdownloader-VNC ===    
+      - "traefik.http.routers.vnc-http.entrypoints=http"    
+      - "traefik.http.routers.vnc-http.rule=Host(`vnc.${DOMAIN}`)"  
+      - "traefik.http.routers.vnc-http.service=vnc-service"  
+      - "traefik.http.middlewares.vnc-https-redirect.redirectscheme.scheme=https"    
+      - "traefik.http.routers.vnc-http.middlewares=vnc-https-redirect"    
+      - "traefik.http.routers.vnc-https.entrypoints=https"    
+      - "traefik.http.routers.vnc-https.rule=Host(`vnc.${DOMAIN}`)"    
+      - "traefik.http.routers.vnc-https.tls=true"    
+      - "traefik.http.routers.vnc-https.service=vnc-service"    
+      - "traefik.http.services.vnc-service.loadbalancer.server.port=5900"
+

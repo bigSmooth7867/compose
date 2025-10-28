@@ -1,0 +1,41 @@
+services:
+  slskd:
+    image: slskd/slskd:latest
+    container_name: slskd
+    network_mode: "service:gluetun"
+    user: 1000:1000
+    restart: unless-stopped
+    # ports:
+    #   - "5030:5030" #HTTP
+    #   - "5031:5031" #HTTPS
+    #   - "50300:50300" #Incoming Connections
+    environment:
+      TZ: ${TZ}
+      SLSKD_REMOTE_CONFIGURATION: true
+      SLSKD_NO_AUTH: true
+      SLSKD_REMOTE_FILE_MANAGEMENT: true
+      SLSKD_SHARED_DIR: /data # This sets a default, but we'll add other users in the slskd config
+      SLSKD_DOWNLOADS_DIR: /downloads/complete
+      SLSKD_INCOMPLETE_DIR: /downloads/incomplete
+      SLSKD_UPLOAD_SPEED_LIMIT: 500
+      SLSKD_UMASK: 000
+    volumes:
+      - ${DOCKER_DIR}/downloader/slskd/data:/app
+      - ${NFS_DIR}/ssdp1/media/audio/downloaders/slskd/downloads:/downloads
+      - ${NFS_DIR}/ssdp1/media/audio/music/omar:/data
+      - ${NFS_DIR}/ssdp1/media/audio/music/vasantika:/data2
+      - ${NFS_DIR}/ssdp1/media/audio/music/shared:/data3
+      - ${NFS_DIR}/ssdp1/media/audio/downloaders/slskd/ebooks:/ebooks #ebooks
+      # - ${NFS_DIR}/ssdp1/media/audio/downloaders/slskd/music:/music:rw
+      # - ${NFS_DIR}/ssdp1/media/audio/downloaders/slskd/ebook:/ebooks:rw
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    labels:
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=slskd
+      - homepage.icon=slskd.png
+      - homepage.href=https://slskd.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true   

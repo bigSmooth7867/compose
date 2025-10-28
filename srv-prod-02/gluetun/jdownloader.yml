@@ -1,0 +1,29 @@
+services:
+  jdownloader-2:
+    image: jlesage/jdownloader-2
+    container_name: jdownloader2
+    network_mode: "service:gluetun"
+    # ports:
+    #   - 5800:5800/tcp #jdownloader gui
+    #   - 5900:5900/tcp #jdownloader vnc
+    #   - 3129:3129/tcp #myjdownloader online
+    #   - 9666:9666 #jdwonloader browser extention
+    environment:
+      - TZ=${TZ}
+ #     - SECURE_CONNECTION=0 #1=enable 0=disable
+      # - SECURE_CONNECTION_VNC_METHOD=SSL
+      # - VNC_PASSWORD=password
+    volumes:
+      - "${DOCKER_DIR}/downloader/jdownloader2:/config:rw"
+      - "${NFS_DIR}/tank/roms/downloads/jdownloader:/output:rw"
+    depends_on:
+      - gluetun
+    restart: unless-stopped
+    # labels:
+    # #homepage
+    #   - homepage.group=${GROUP}
+    #   - homepage.name=jdownloader
+    #   - homepage.icon=jdownloader.png
+    #   - homepage.href=https://jdownloader.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
