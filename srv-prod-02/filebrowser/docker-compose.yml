@@ -1,0 +1,43 @@
+services:
+  filebrowser:
+    container_name: filebrowser
+    image: gtstef/filebrowser
+    restart: unless-stopped
+    # Optionally run as non-root filebrowser user
+    #user: filebrowser
+    environment:
+      FILEBROWSER_CONFIG: "data/config.yaml"
+      TZ: "${TZ}" # optionally set your local timezone https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+    volumes:
+      - '${NFS_DIR}/tank/roms/downloads/jdownloader/to_print:/folder' # Never mount root "/" directory to docker, always choose a sub-folder with your data.
+      - '${DOCKER_DIR}/filebrowser/data:/home/filebrowser/data' # mount the data folder you created with the config file.
+      # Advanced: If you plan to run with a different user besides root or filebrowser, you will need to mount a tmp directory.
+      #- './tmp/:/home/filebrowser/tmp/'
+    # ports:
+    #   - '80:80' # the left 80 is the port **you will use** to access. The right 80 is the container port that **must match the config.yaml**
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.filebrowser.entrypoints=http"
+      - "traefik.http.routers.filebrowser.rule=Host(`filebrowser.${DOMAIN}`)" #Dom4in
+      - "traefik.http.middlewares.filebrowser-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.filebrowser.middlewares=filebrowser-https-redirect"
+      - "traefik.http.routers.filebrowser-secure.entrypoints=https"
+      - "traefik.http.routers.filebrowser-secure.rule=Host(`filebrowser.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.filebrowser-secure.tls=true"
+      - "traefik.http.routers.filebrowser-secure.service=filebrowser"
+      - "traefik.http.services.filebrowser.loadbalancer.server.port=80" #port
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${GROUP}
+      - homepage.name=filebrowser
+      - homepage.icon=filebrowser.png
+      - homepage.href=https://filebrowser.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
