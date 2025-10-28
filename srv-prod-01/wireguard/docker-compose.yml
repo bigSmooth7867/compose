@@ -2,7 +2,7 @@ services:
   wg-easy:
     image: ghcr.io/wg-easy/wg-easy
     container_name: wg-easy
-    restart: unless-stoppe
+    restart: unless-stopped
     env_file:
       - secrets.env
     environment:
