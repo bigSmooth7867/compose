@@ -32,13 +32,3 @@ services:
       - homepage.href=https://maps.${DOMAIN}
     security_opt:
       - no-new-privileges:true
-networks:
-  proxy:
-    external: true
-  # hassionet:
-  #   name: hassionet
-  #   driver: bridge
-    # ipam:
-    #   config:
-    #     - subnet: 172.30.0.0/16
-    #       gateway: 172.30.0.1 
