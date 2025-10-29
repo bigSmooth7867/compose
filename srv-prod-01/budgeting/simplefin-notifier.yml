@@ -4,8 +4,8 @@ services:
     container_name: simplefin-notifier
     depends_on:
       - actual_server
-    # env_file:
-    #   - .env.simplefin-notifier
+    env_file:
+      - secrets.env
     environment:
       - GOTIFY_APP_TOKEN=${GOTIFY_APP_TOKEN}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
