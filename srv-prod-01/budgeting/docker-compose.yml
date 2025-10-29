@@ -1,0 +1,9 @@
+include:
+ - ${COMPOSE_DIR}/budgeting/wallos.yml
+ - ${COMPOSE_DIR}/budgeting/actual-server.yml
+#  - ${COMPOSE_DIR}/budgeting/simplefin-notifier.yml
+#  - ${COMPOSE_DIR}/budgeting/actual-ai.yml
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,34 @@
+services:
+  wallos:
+    container_name: wallos
+    image: bellamy/wallos:latest
+    restart: unless-stopped
+    # ports:
+    #   - "8282:80/tcp"
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - '${DOCKER_DIR}/budgeting/wallos/db:/var/www/html/db'
+      - '${DOCKER_DIR}/budgeting/wallos/logos:/var/www/html/images/uploads/logos'
+    networks:
+      proxy:
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.wallos.entrypoints=http"
+      - "traefik.http.routers.wallos.rule=Host(`wallos.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.wallos-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.wallos.middlewares=wallos-https-redirect"
+      - "traefik.http.routers.wallos-secure.entrypoints=https"
+      - "traefik.http.routers.wallos-secure.rule=Host(`wallos.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.wallos-secure.tls=true"
+      - "traefik.http.routers.wallos-secure.service=wallos"
+      - "traefik.http.services.wallos.loadbalancer.server.port=80" #port
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=wallos
+      - homepage.icon=wallos.png
+      - homepage.href=https://wallos.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
