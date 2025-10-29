@@ -7,10 +7,10 @@ services:
     # env_file:
     #   - .env.simplefin-notifier
     environment:
-      - SIMPLEFIN_BRIDGE_TOKEN=${SIMPLEFIN_BRIDGE_TOKEN}
-      - GOTIFY_BASE_URL=https://gotify.${DOMAIN}
       - GOTIFY_APP_TOKEN=${GOTIFY_APP_TOKEN}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - SIMPLEFIN_BRIDGE_TOKEN=${SIMPLEFIN_BRIDGE_TOKEN}
+      - GOTIFY_BASE_URL=https://gotify.${DOMAIN}
       - CREDENTIALS_PATH=/app/credentials
       - FILE_LOGGING_LEVEL=INFO
       - CRON_SCHEDULE=0 12 * * *
