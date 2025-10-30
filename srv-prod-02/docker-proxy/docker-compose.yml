@@ -1,0 +1,39 @@
+services:
+  dockerproxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:latest
+    container_name: dockerproxy
+    environment:
+      - CONTAINERS=1 # Allow access to viewing containers
+      - SERVICES=1 # Allow access to viewing services (necessary when using Docker Swarm)
+      - TASKS=1 # Allow access to viewing tasks (necessary when using Docker Swarm)
+      - POST=0 # Disallow any POST operations (effectively read-only)
+    # ports:
+    #   - 0.0.0.0:2375:2375
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Mounted as read-only
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.docker-proxy.entrypoints=http"
+      - "traefik.http.routers.docker-proxy.rule=Host(`docker-proxy.${DOMAIN}`)"
+      - "traefik.http.routers.docker-proxy.middlewares=docker-proxy-https-redirect"
+      - "traefik.http.middlewares.docker-proxy-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.docker-proxy-secure.entrypoints=https"
+      - "traefik.http.routers.docker-proxy-secure.rule=Host(`docker-proxy.${DOMAIN}`)"
+      - "traefik.http.routers.docker-proxy-secure.tls=true"
+      - "traefik.http.routers.docker-proxy-secure.service=docker-proxy"
+      - "traefik.http.routers.docker-proxy-secure.middlewares=docker-auth"
+      - "traefik.http.services.docker-proxy.loadbalancer.server.port=2375" 
+      - "traefik.docker.network=proxy"
+
+     # SECURITY MIDDLEWARE 2: Basic Authentication
+      - "traefik.http.middlewares.docker-auth.basicauth.users=admin:$2y$05$8MCfZDE2XRgyBVoaPrL8RuGKmbp/i0T4sDcVYpexs8Qu2Y4Xm6bmO"
+      - "traefik.http.middlewares.docker-auth.basicauth.realm=Docker Proxy Protected"
+      - "traefik.http.middlewares.docker-auth.basicauth.headerField=X-WebAuth-User"
+
+networks:
+  proxy:
+    external: true
