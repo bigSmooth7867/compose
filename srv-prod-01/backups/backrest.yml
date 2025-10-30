@@ -8,7 +8,7 @@ services:
       - ${DOCKER_DIR}/backups/backrest/config:/config
       - ${DOCKER_DIR}/backups/backrest/cache:/cache
       - ${DOCKER_DIR}:/docker # [optional] mount local paths to backup here.
-      - ${COMPOSE_DIR}:/docker-compose # [optional] mount local paths to backup here.
+      # - ${COMPOSE_DIR}:/docker-compose # [optional] mount local paths to backup here.
       - ${NFS_DIR}/ssdp1/backups/docker/backrest:/truenas # [optional] mount repos if using local storage, not necessary for remotes e.g. B2, S3, etc.
     environment:
       - BACKREST_DATA=/data # path for backrest data. restic binary and the database are placed here.
