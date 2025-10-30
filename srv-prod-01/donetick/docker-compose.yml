@@ -1,0 +1,39 @@
+services:
+  donetick:
+    image: donetick/donetick:latest
+    container_name: donetick
+    restart: unless-stopped
+    # ports:
+    #   - 2021:2021
+    volumes:
+      - ${DOCKER_DIR}/donetick/data:/donetick-data
+      - ${DOCKER_DIR}/donetick/config:/config
+    environment:
+      - DT_ENV=selfhosted
+      - DT_SQLITE_PATH=/donetick-data/donetick.db
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.donetick.entrypoints=http"
+      - "traefik.http.routers.donetick.rule=Host(`todo.${DOMAIN}`)" 
+      - "traefik.http.middlewares.donetick-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.donetick.middlewares=donetick-https-redirect"
+      - "traefik.http.routers.donetick-secure.entrypoints=https"
+      - "traefik.http.routers.donetick-secure.rule=Host(`todo.${DOMAIN}`)"
+      - "traefik.http.routers.donetick-secure.tls=true"
+      - "traefik.http.routers.donetick-secure.service=donetick"
+      - "traefik.http.services.donetick.loadbalancer.server.port=2021"
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=donetick
+      - homepage.icon=donetick.png
+      - homepage.href=https://todo.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+networks:
+  proxy:
+    external: true
+      
