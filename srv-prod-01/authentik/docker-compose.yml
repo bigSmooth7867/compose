@@ -17,21 +17,21 @@ services:
       - authentiknet
       - pgbackwebnet
 
-  authentik-redis:
-    image: docker.io/library/redis:alpine
-    container_name: authentik-redis
-    command: --save 60 1 --loglevel warning
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      start_period: 20s
-      interval: 30s
-      retries: 5
-      timeout: 3s
-    volumes:
-      - redis:/data
-    networks:
-      - authentiknet
+  # authentik-redis:
+  #   image: docker.io/library/redis:alpine
+  #   container_name: authentik-redis
+  #   command: --save 60 1 --loglevel warning
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+  #     start_period: 20s
+  #     interval: 30s
+  #     retries: 5
+  #     timeout: 3s
+  #   volumes:
+  #     - redis:/data
+  #   networks:
+  #     - authentiknet
 
   server:
     image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.10.0}
@@ -41,7 +41,7 @@ services:
     env_file:
       - secrets.env
     environment:
-      AUTHENTIK_REDIS__HOST: authentik-redis
+      # AUTHENTIK_REDIS__HOST: authentik-redis
       AUTHENTIK_POSTGRESQL__HOST: pg_authentik
     volumes:
       - ${DOCKER_DIR}/authentik/authentik/media:/media
@@ -52,8 +52,8 @@ services:
     depends_on:
       pg_authentik:
         condition: service_healthy
-      authentik-redis:
-        condition: service_healthy
+      # authentik-redis:
+      #   condition: service_healthy
     networks:
       - authentiknet
       - proxy
@@ -86,7 +86,7 @@ services:
     env_file:
       - secrets.env
     environment:
-      AUTHENTIK_REDIS__HOST: authentik-redis
+      # AUTHENTIK_REDIS__HOST: authentik-redis
       AUTHENTIK_POSTGRESQL__HOST: pg_authentik
     user: root
     volumes:
@@ -97,15 +97,15 @@ services:
     depends_on:
       pg_authentik:
         condition: service_healthy
-      authentik-redis:
-        condition: service_healthy     
+      # authentik-redis:
+      #   condition: service_healthy     
     networks:
       - authentiknet
       - proxy
 
-volumes:
-  redis:
-    driver: local
+# volumes:
+#   redis:
+#     driver: local
 
 networks:
   authentiknet:
