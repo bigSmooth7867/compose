@@ -52,7 +52,7 @@ services:
       - "traefik.http.routers.traefik-secure.service=api@internal"
       - "traefik.http.routers.traefik-secure.middlewares=middlewares-authentik@file" 
     #HOMEPAGE
-      - homepage.group=${GROUP}
+      - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=traefik
       - homepage.icon=traefik.png
       - homepage.href=https://traefik-dashboard.${DOMAIN}
