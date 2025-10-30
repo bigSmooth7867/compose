@@ -31,7 +31,7 @@ services:
       - "traefik.http.services.filebrowser.loadbalancer.server.port=80" #port
       - "traefik.docker.network=proxy"
     #HOMEPAGE
-      - homepage.group=${GROUP}
+      - homepage.group=${HOMEPAGE_GROUP}
       - homepage.name=filebrowser
       - homepage.icon=filebrowser.png
       - homepage.href=https://filebrowser.${DOMAIN}
