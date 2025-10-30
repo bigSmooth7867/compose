@@ -1,0 +1,66 @@
+services:
+  pgbackweb:
+    container_name: pgbackweb
+    image: eduardolat/pgbackweb:latest
+    restart: unless-stopped
+    # ports:
+    #   - "8085:8085" 
+    volumes:
+      - ${NFS_DIR}/ssdp1/backups/docker/pgbackup:/backups # If you only use S3 destinations, you don't need this volume
+    env_file:
+      - secrets.env
+    environment:
+      # PBW_ENCRYPTION_KEY: ${PBW_ENCRYPTION_KEY}
+      # PBW_POSTGRES_CONN_STRING: ${PBW_POSTGRES_CONN_STRING} 
+      TZ: ${TZ}
+    depends_on:
+      pg_pgbackweb:
+        condition: service_healthy
+    networks:
+      - proxy
+      - pgbackwebnet
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgbackup.entrypoints=http"
+      - "traefik.http.routers.pgbackup.rule=Host(`pgbackup.${DOMAIN}`)" #Domain
+      - "traefik.http.middlewares.pgbackup-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.pgbackup.middlewares=pgbackup-https-redirect"
+      - "traefik.http.routers.pgbackup-secure.entrypoints=https"
+      - "traefik.http.routers.pgbackup-secure.rule=Host(`pgbackup.${DOMAIN}`)" #Domain
+      - "traefik.http.routers.pgbackup-secure.tls=true"
+      - "traefik.http.routers.pgbackup-secure.service=pgbackup"
+      - "traefik.http.services.pgbackup.loadbalancer.server.port=8085" #port
+#      - "traefik.http.routers.pgbackup-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=pgbackweb
+      - homepage.icon=/icons/pgbackweb.png
+      - homepage.href=https://pgbackup.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true
+
+  pg_pgbackweb:
+    container_name: pg_pgbackweb
+    image: postgres:16
+    restart: unless-stopped
+    # environment:
+    #   - POSTGRES_USER=${PG_USER}
+    #   - POSTGRES_DB=${PG_DB}
+    #   - POSTGRES_PASSWORD=${PG_PASS}
+    # ports:
+    #   - "5432:5432"
+    volumes:
+      - ${POSTGRES_DIR}/pgbackup_db/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pgbackweb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pgbackwebnet
+    security_opt:
+      - no-new-privileges:true
+
+

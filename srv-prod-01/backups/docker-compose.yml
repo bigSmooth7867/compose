@@ -1,0 +1,12 @@
+include:
+ - ${COMPOSE_DIR}/backups/backrest.yml
+ - ${COMPOSE_DIR}/backups/pgbackweb.yml
+#  - ${COMPOSE_DIR}/backups/restic.yml
+
+networks:
+  proxy:
+    external: true
+  pgbackwebnet:
+    external: true
+
+

@@ -1,0 +1,44 @@
+services:
+  backrest:
+    image: garethgeorge/backrest:latest
+    container_name: backrest
+    hostname: backrest
+    volumes:
+      - ${DOCKER_DIR}/backups/backrest/data:/data
+      - ${DOCKER_DIR}/backups/backrest/config:/config
+      - ${DOCKER_DIR}/backups/backrest/cache:/cache
+      - ${DOCKER_DIR}:/docker # [optional] mount local paths to backup here.
+      - ${COMPOSE_DIR}:/docker-compose # [optional] mount local paths to backup here.
+      - ${NFS_DIR}/ssdp1/backups/docker/backrest:/truenas # [optional] mount repos if using local storage, not necessary for remotes e.g. B2, S3, etc.
+    environment:
+      - BACKREST_DATA=/data # path for backrest data. restic binary and the database are placed here.
+      - BACKREST_CONFIG=/config/config.json # path for the backrest config file.
+      - XDG_CACHE_HOME=/cache # path for the restic cache which greatly improves performance.
+      - TZ=${TZ} # set the timezone for the container, used as the timezone for cron jobs.
+    restart: unless-stopped
+    # ports:
+    #   - 9898:9898
+    networks:
+      - proxy
+    labels:
+    #TRAEFIK
+      - "traefik.enable=true"
+      - "traefik.http.routers.nginx.entrypoints=http"
+      - "traefik.http.routers.nginx.rule=Host(`backrest.${DOMAIN}`)" #Dom4in
+      - "traefik.http.middlewares.nginx-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.nginx.middlewares=nginx-https-redirect"
+      - "traefik.http.routers.nginx-secure.entrypoints=https"
+      - "traefik.http.routers.nginx-secure.rule=Host(`backrest.${DOMAIN}`)" #Dom4in
+      - "traefik.http.routers.nginx-secure.tls=true"
+      - "traefik.http.routers.nginx-secure.service=nginx"
+      - "traefik.http.services.nginx.loadbalancer.server.port=9898" #port
+#      - "traefik.http.services.nginx.loadbalancer.server.scheme=https" #if OVER HTTPS
+      - "traefik.http.routers.nginx-secure.middlewares=middlewares-authentik@file" #add this to any container you want to use the Authentik web proxy
+      - "traefik.docker.network=proxy"
+    #HOMEPAGE
+      - homepage.group=${HOMEPAGE_GROUP}
+      - homepage.name=backrest
+      - homepage.icon=backrest.png
+      - homepage.href=https://backrest.${DOMAIN}
+    security_opt:
+      - no-new-privileges:true

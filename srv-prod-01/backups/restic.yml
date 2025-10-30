@@ -1,0 +1,67 @@
+services:
+  backup:
+    image: mazzolino/restic
+    container_name: restic
+    hostname: backup_host
+    restart: unless-stopped
+    # user: "1000:1000"
+    environment:
+      RUN_ON_STARTUP: "true" #change as you wish
+      BACKUP_CRON: "0 */12 * * *" #this is twice daily, i.e., every 12 hours
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY} #/restic
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD}
+      RESTIC_BACKUP_SOURCES: /mnt/docker
+      RESTIC_COMPRESSION: auto 
+      RESTIC_BACKUP_ARGS: >-
+        --tag restic-docker
+        --verbose
+      RESTIC_FORGET_ARGS: >- #change as required
+        --keep-last 10
+        --keep-daily 7
+        --keep-weekly 5
+        --keep-monthly 12
+      TZ: America/New_York
+    volumes:
+      - ${NFS_DIR}/ssdp1/backups/docker/restic:/restic #change the left hand side to where you want to store the backups. 
+      - ${NFS_DIR}/ssdp1/backups/docker/restic/tmp-for-restore:/tmp-for-restore #USE THIS FOLDER FOR RESTORE - CAN VIEW EACH CONTAINER
+      - ${DOCKER_DIR}:/mnt/docker:ro
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - resticnet
+
+  prune:
+    image: mazzolino/restic
+    container_name: restic-prune
+    hostname: prune_host
+    restart: unless-stopped
+    # user: "1000:1000"
+    environment:
+      RUN_ON_STARTUP: "true"
+      PRUNE_CRON: "0 0 4 * * *"
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY} #/restic
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD}
+      TZ: ${TZ}
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - resticnet
+
+  check:
+    image: mazzolino/restic
+    container_name: restic-check
+    hostname: check_host
+    restart: unless-stopped
+    # user: "1000:1000"
+    environment:
+      RUN_ON_STARTUP: "false"
+      CHECK_CRON: "0 15 5 * * *"
+      RESTIC_CHECK_ARGS: >-
+        --read-data-subset=10%
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY} #/restic
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD}
+      TZ: ${TZ}
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - resticnet
