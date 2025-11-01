@@ -51,6 +51,7 @@ services:
       OUTPUT_FILE: /xmltv/guide.xml
       LINEUP_ID: USA-FL09477-L
       POSTAL_CODE: 32801
+      TIMESPAN: 360
     volumes:
       - ${DOCKER_DIR}/media-stack/tvheadend/data/data/:/xmltv
     restart: unless-stopped
