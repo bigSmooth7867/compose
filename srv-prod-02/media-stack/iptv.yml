@@ -12,7 +12,7 @@ services:
       - ${NFS_DIR}/tank/media/data/media/dvr/tvheadend_dvr:/recordings
       - ${DOCKER_DIR}/media-stack/tvheadend/custom_scripts/custom-cont-init.d:/custom-cont-init.d #Custom Scripts
 #      - ${DOCKER_DIR}/media-stack/tvheadend/custom_scripts:/custom-cont-init.d #Custom Scripts
-#      - /path/to/icons:/icons #icons
+      - ${DOCKER_RESOURCES}/channel_logos:/icons #icons
     ports:
       # - 9981:9981 #WebUI
       - 9982:9982 #HTSP server port
