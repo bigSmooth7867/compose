@@ -34,8 +34,8 @@ services:
       - ${DOCKER_DIR}/dashboards/homepage/icons:/app/public/icons 
       # - /var/run/docker.sock:/var/run/docker.sock:ro # optional, for docker integrations
       # - /:/main:ro
-      - /:/main/sda1:ro        # Mount root partition
-      - /mnt/docker:/main/sdb1:ro  # Mount /dev/sdb1
+      - /:/host_root:ro           # Mount root partition (for /dev/sda1)
+      - /mnt/docker:/host_docker:ro  # Mount /dev/sdb1
 
     restart: unless-stopped
     labels:
