@@ -10,8 +10,8 @@ services:
       - POST=0 # Disallow any POST operations (effectively read-only)
     networks:
       - dashboardnet
-    ports:
-      - 127.0.0.1:2375:2375
+    # ports:
+    #   - 127.0.0.1:2375:2375
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro # Mounted as read-only
     restart: unless-stopped
@@ -32,11 +32,6 @@ services:
     volumes:
       - ${DOCKER_DIR}/dashboards/homepage/config:/app/config # Make sure your local config directory exists
       - ${DOCKER_DIR}/dashboards/homepage/icons:/app/public/icons 
-      # - /var/run/docker.sock:/var/run/docker.sock:ro # optional, for docker integrations
-      # - /:/main:ro
-      # - /:/host_root:ro           # Mount root partition (for /dev/sda1)
-      # - /mnt/docker:/host_docker:ro  # Mount /dev/sdb1
-
     restart: unless-stopped
     labels:
     #TRAEFIK
