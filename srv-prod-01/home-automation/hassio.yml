@@ -18,7 +18,7 @@ services:
      - "1443:1443/tcp" #sonos TTS
      - "5683:5683"     #unicast #shelly
    #  - "21063:21063"  #/tcp"
-     - "5060:5060"     #VOIP SIP
+     - "5060:5060/udp"     #VOIP SIP
     depends_on:
       - pg_homeassistant
       - emqx1
